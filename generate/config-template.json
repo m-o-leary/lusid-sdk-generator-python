@@ -1,0 +1,9 @@
+{
+    "packageName": "${PACKAGE_NAME}",
+    "projectName": "${PROJECT_NAME}",
+    "packageVersion": "${PACKAGE_VERSION}",
+    "generateSourceCodeOnly": "generateSourceCodeOnly",
+    "library": "asyncio",
+    "disallowAdditionalPropertiesIfNotPresent": "false",
+    "licenseInfo": "MIT"
+}
