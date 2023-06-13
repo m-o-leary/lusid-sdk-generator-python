@@ -245,14 +245,14 @@ class {{classname}}({{#parent}}{{{.}}}{{/parent}}{{^parent}}BaseModel{{/parent}}
             {{^items.isEnumOrRef}}
             {{#items.isContainer}}
             {{#items.isMap}}
-            "{{{name}}}": {k: None if v is None else {ik: {{{items.dataType}}}.from_dict(iv) for ik, iv in v.items()} for k, v in obj.get("{{{baseName}}}").items()} if obj.get("{{{baseName}}}") is not None else None,
+            "{{{name}}}": {k: (None if v is None else {{{items.dataType}}}.from_dict(v)) for k, v in obj.get("{{{baseName}}}").items()} if obj.get("{{{baseName}}}") is not None else None,
             {{/items.isMap}}
             {{#items.isArray}}
-            "{{{name}}}": {k: None if v is None else {ik: {{{items.dataType}}}.from_dict(iv) for ik, iv in v.items()} for k, v in obj.get("{{{baseName}}}").items()} if obj.get("{{{baseName}}}") is not None else None,
+            "{{{name}}}": {k: (None if v is None else [{{{items.items.dataType}}}.from_dict(iv) for iv in v]) for k, v in obj.get("{{{baseName}}}").items()} if obj.get("{{{baseName}}}") is not None else None,
             {{/items.isArray}}
             {{/items.isContainer}}
             {{^items.isContainer}}
-            "{{{name}}}": {k: None if v is None else {ik: {{{items.dataType}}}.from_dict(iv) for ik, iv in v.items()} for k, v in obj.get("{{{baseName}}}").items()} if obj.get("{{{baseName}}}") is not None else None,
+            "{{{name}}}": {k: (None if v is None else {{{items.dataType}}}.from_dict(v)) for k, v in obj.get("{{{baseName}}}").items()} if obj.get("{{{baseName}}}") is not None else None,
             {{/items.isContainer}}
             {{/items.isEnumOrRef}}
             {{#items.isEnumOrRef}}
