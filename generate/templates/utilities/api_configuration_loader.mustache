@@ -1,7 +1,7 @@
 import json
 import os
-from pathlib import Path
 import logging
+import importlib
 
 from {{packageName}}.utilities.api_configuration import ApiConfiguration
 from {{packageName}}.utilities.proxy_config import ProxyConfig
@@ -23,8 +23,11 @@ class ApiConfigurationLoader:
         # Get the config keys which contain the mapping between the ApiConfiguration attributes and the variable names
         # in the secrets.json file and environment variables e.g. token_url is tokenUrl (secrets.json) and
         # FBN_TOKEN_URL (env variable)
-        with open(Path(__file__).parent.joinpath('config_keys.json')) as json_file:
-            config_keys = json.load(json_file)
+        with importlib.resources.path(
+            "{{packageName}}.utilities", "config_keys.json"
+        ) as path:
+            with open(path, "r") as config_key_file:
+                config_keys = json.load(config_key_file)
 
         # The secrets file is a nested dictionary, set the names of the top level keys
         api_config_key = "api"

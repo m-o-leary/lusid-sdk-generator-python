@@ -1,0 +1,45 @@
+```python
+from __future__ import print_function
+import time
+import os
+import {{{packageName}}}
+from {{packageName}} import ApiClientFactory
+from {{{packageName}}}.rest import ApiException
+{{#vendorExtensions.x-py-example-import}}
+{{{.}}}
+{{/vendorExtensions.x-py-example-import}}
+from pprint import pprint
+
+{{> python_doc_auth_partial}}
+
+# Use the {{packageName}} ApiClientFactory to build Api instances with a configured api client
+# The ApiClientFactory will use the api_url and token if passed as parameters
+# Or the secrets in the secrets file at secrets_path
+# Or configured environment variables 
+# To configure an api_client to make calls to LUSID APIs
+api_client_factory = ApiClientFactory(
+    api_url=api_url, 
+    token=access_token,
+    secrets_path=secrets_path, 
+    app_name=app_name
+)
+# Enter a context with an instance of the ApiClientFactory to ensure the connection pool is closed after use
+{{#asyncio}}async {{/asyncio}}with api_client_factory:
+    # Create an instance of the API class
+    api_instance = api_client_factory.build({{{packageName}}}.{{{classname}}})
+    {{#allParams}}
+    {{paramName}} = {{{example}}} # {{{dataType}}} | {{{description}}}{{^required}} (optional){{/required}}{{#defaultValue}} (default to {{{.}}}){{/defaultValue}}
+    {{/allParams}}
+
+    try:
+        {{#summary}}
+        # {{{.}}}
+        {{/summary}}
+        {{#returnType}}api_response = {{/returnType}}{{#asyncio}}await {{/asyncio}}api_instance.{{{operationId}}}({{#allParams}}{{#required}}{{paramName}}{{/required}}{{^required}}{{paramName}}={{paramName}}{{/required}}{{^-last}}, {{/-last}}{{/allParams}})
+        {{#returnType}}
+        print("The response of {{classname}}->{{operationId}}:\n")
+        pprint(api_response)
+        {{/returnType}}
+    except Exception as e:
+        print("Exception when calling {{classname}}->{{operationId}}: %s\n" % e)
+```
