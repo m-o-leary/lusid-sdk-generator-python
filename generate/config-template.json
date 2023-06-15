@@ -6,5 +6,38 @@
     "library": "asyncio",
     "disallowAdditionalPropertiesIfNotPresent": "false",
     "licenseInfo": "MIT",
-    "datetimeFormat": "%Y-%m-%dT%H:%M:%S.%fZ"
+    "datetimeFormat": "%Y-%m-%dT%H:%M:%S.%fZ",
+    "isLusidPackage": true,
+    "files": {
+        "utilities/api_client_builder.mustache": {
+            "destinationFilename": "${PACKAGE_NAME}/utilities/api_client_builder.py"
+        },
+        "utilities/api_client_factory.mustache": {
+            "destinationFilename": "${PACKAGE_NAME}/utilities/api_client_factory.py"
+        },
+        "utilities/api_configuration_loader.mustache": {
+            "destinationFilename": "${PACKAGE_NAME}/utilities/api_configuration_loader.py"
+        },
+        "utilities/api_configuration.mustache": {
+            "destinationFilename": "${PACKAGE_NAME}/utilities/api_configuration.py"
+        },
+        "utilities/config_keys_json.mustache": {
+            "destinationFilename": "${PACKAGE_NAME}/utilities/config_keys.json"
+        },
+        "utilities/config_keys_py.mustache": {
+            "destinationFilename": "${PACKAGE_NAME}/utilities/config_keys.py"
+        },
+        "utilities/lusid_retry.mustache": {
+            "destinationFilename": "${PACKAGE_NAME}/utilities/lusid_retry.py"
+        },
+        "utilities/proxy_config.mustache": {
+            "destinationFilename": "${PACKAGE_NAME}/utilities/proxy_config.py"
+        },
+        "utilities/refreshing_token.mustache": {
+            "destinationFilename": "${PACKAGE_NAME}/utilities/refreshing_token.py"
+        },
+        "utilities/__init__.mustache": {
+            "destinationFilename": "${PACKAGE_NAME}/utilities/__init__.py"
+        }
+    }
 }

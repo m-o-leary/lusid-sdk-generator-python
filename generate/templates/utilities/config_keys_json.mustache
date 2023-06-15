@@ -1,0 +1,52 @@
+{
+  "token_url": {
+      "env": "FBN_TOKEN_URL",
+      "config": "tokenUrl"
+  },
+  "api_url": {
+      "env": {{#lambda.uppercase}}"FBN_{{packageName}}_API_URL"{{/lambda.uppercase}},
+      "config": "{{#lambda.camelcase}}
+      {{^isLusidPackage}}{{packageName}}{{/isLusidPackage}}-api-Url
+      {{/lambda.camelcase}}"
+  },
+  "username": {
+      "env": "FBN_USERNAME",
+      "config": "username"
+  },
+  "password": {
+      "env": "FBN_PASSWORD",
+      "config": "password"
+  },
+  "client_id": {
+      "env": "FBN_CLIENT_ID",
+      "config": "clientId"
+  },
+  "client_secret": {
+      "env": "FBN_CLIENT_SECRET",
+      "config": "clientSecret"
+  },
+  "app_name": {
+      "env": "FBN_APP_NAME",
+      "config": "applicationName"
+  },
+  "certificate_filename": {
+      "env": "FBN_CLIENT_CERTIFICATE",
+      "config": "clientCertificate"
+  },
+  "proxy_address": {
+      "env": "FBN_PROXY_ADDRESS",
+      "config": "address"
+  },
+  "proxy_username": {
+      "env": "FBN_PROXY_USERNAME",
+      "config": "username"
+  },
+  "proxy_password": {
+      "env": "FBN_PROXY_PASSWORD",
+      "config": "password"
+  },
+    "access_token": {
+      "env": "FBN_ACCESS_TOKEN",
+      "config": "accessToken"
+  }
+}
