@@ -5,20 +5,18 @@ from {{packageName}} import ApiException
 from {{packageName}}.api_client import ApiClient
 
 
-def lusidretry(fn, retries):
+def retry(fn, retries=3):
     @functools.wraps(fn)
-    def __retry(*args, **kwargs):
-        retries = kwargs.get("lusid_retries", 3)
+    async def __retry(*args, **kwargs):
         if not isinstance(retries, int):
-            retries = 3
-
-        # remove the lusid_retries param from the kwargs
-        kwargs.pop("lusid_retries", None)
+            raise ValueError(f"retries should be an int, found {type(retries)}")
+        # remove the retries param from the kwargs
+        kwargs.pop("retries", None)
 
         tries = 0
         while tries < retries + 1:
             try:
-                return fn(*args, **kwargs)
+                return await fn(*args, **kwargs)
             except ApiException as ex:
                 tries += 1
                 retry_after = ex.headers.get("Retry-After")
@@ -57,7 +55,7 @@ class RetryingClient(ApiClient):
         retries=3,
     ):
         super().__init__(configuration, header_name, header_value, cookie, pool_threads)
-        self.retries = retries
+        self.default_retries = retries
 
     async def call_api(
         self,
@@ -78,9 +76,9 @@ class RetryingClient(ApiClient):
         _request_timeout=None,
         _host=None,
         _request_auth=None,
-        lusid_retries=3,
+        retries=3,
     ):
-        call_api_fn = lusidretry(super().call_api, retries=self.retries)
+        call_api_fn = retry(super().call_api, retries=retries or self.default_retries)
 
         return await call_api_fn(
             resource_path=resource_path,
