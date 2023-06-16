@@ -56,7 +56,7 @@ class RetryingClient(ApiClient):
         pool_threads=1,
         retries=3,
     ):
-        super.__init__(configuration, header_name, header_value, cookie, pool_threads)
+        super().__init__(configuration, header_name, header_value, cookie, pool_threads)
         self.retries = retries
 
     async def call_api(
