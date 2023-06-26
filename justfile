@@ -1,3 +1,11 @@
+# Generate SDK's from a swagger.json file.
+#
+#  Ensure that you set the following environment variables to an appropriate value before running
+#    PACKAGE_NAME
+#    PROJECT_NAME
+#    PACKAGE_VERSION
+#    PYPI_PACKAGE_LOCATION
+
 export PACKAGE_NAME := `echo ${PACKAGE_NAME:-lusid}`
 export PROJECT_NAME := `echo ${PROJECT_NAME:-lusid-sdk}`
 export PACKAGE_VERSION := `echo ${PACKAGE_VERSION:-2.0.0}`
@@ -13,11 +21,9 @@ get-swagger:
     curl -s {{swagger_url}} > swagger.json
 
 build-docker-images: 
-    docker build -t lusid-sdk-gen-python:latest --ssh default=$SSH_AUTH_SOCK -f Dockerfile generate
-    docker build -t lusid-sdk-pub-python:latest -f publish/Dockerfile publish
+    docker build -t finbourne/lusid-sdk-gen-python:latest --ssh default=$SSH_AUTH_SOCK -f Dockerfile .
 
 generate-local:
-    mkdir -p /tmp/${PROJECT_NAME}_${PACKAGE_VERSION}
     envsubst < generate/config-template.json > generate/.config.json
     docker run \
         -e JAVA_OPTS="-Dlog.level=error" \
@@ -25,15 +31,15 @@ generate-local:
         -v $(pwd)/generate/:/usr/src/generate/ \
         -v $(pwd)/generate/.openapi-generator-ignore:/usr/src/generate/.output/.openapi-generator-ignore \
         -v $(pwd)/{{swagger_path}}:/tmp/swagger.json \
-        lusid-sdk-gen-python:latest -- ./generate/generate.sh ./generate ./generate/.output /tmp/swagger.json .config.json
+        finbourne/lusid-sdk-gen-python:latest -- ./generate/generate.sh ./generate ./generate/.output /tmp/swagger.json .config.json
     rm -f generate/.output/.openapi-generator-ignore
     docker run \
         -v $(pwd)/generate/.output:/usr/src \
-        lusid-sdk-pub-python:latest -- "cd sdk; poetry add --group dev lusidfeature"
+        finbourne/lusid-sdk-gen-python:latest -- "cd sdk; poetry add --group dev lusidfeature"
 
     docker run \
         -v $(pwd)/generate/.output:/usr/src \
-        lusid-sdk-pub-python:latest -- "cd sdk; poetry install"
+        finbourne/lusid-sdk-gen-python:latest -- "cd sdk; poetry install"
     
 generate TARGET_DIR:
     @just generate-local
@@ -48,7 +54,7 @@ generate TARGET_DIR:
 publish-only-local:
     docker run \
         -v $(pwd)/generate/.output:/usr/src \
-        lusid-sdk-pub-python:latest -- "cd sdk; poetry build"
+        finbourne/lusid-sdk-gen-python:latest -- "cd sdk; poetry build"
     mkdir -p ${PYPI_PACKAGE_LOCATION}
     cp generate/.output/sdk/dist/* ${PYPI_PACKAGE_LOCATION}
 
@@ -56,7 +62,18 @@ publish-only:
     docker run \
         -e POETRY_PYPI_TOKEN_PYPI:${PYPI_TOKEN} \
         -v $(pwd)/generate/.output:/usr/src \
-        lusid-sdk-pub-python:latest -- "cd sdk; poetry publish"
+        finbourne/lusid-sdk-gen-python:latest -- "cd sdk; poetry publish"
+
+publish-cicd SRC_DIR:
+    echo "PACKAGE_VERSION to publish: ${PACKAGE_VERSION}"
+    cd {{SRC_DIR}}/sdk
+    poetry publish
+
+publish-to SRC_DIR OUT_DIR:
+    echo "PACKAGE_VERSION to publish: ${PACKAGE_VERSION}"
+    cd {{SRC_DIR}}/sdk
+    poetry build
+    cp dist/* {{OUT_DIR}}/
 
 generate-and-publish TARGET_DIR:
     @just generate {{TARGET_DIR}}
@@ -66,5 +83,6 @@ generate-and-publish-local:
     @just generate-local
     @just publish-only-local
 
-test:
-    ./test/test.sh
+generate-and-publish-cicd OUT_DIR:
+    @just generate-cicd {{OUT_DIR}}
+    @just publish-cicd {{OUT_DIR}}
