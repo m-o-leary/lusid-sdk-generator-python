@@ -27,8 +27,8 @@
         "utilities/config_keys_py.mustache": {
             "destinationFilename": "${PACKAGE_NAME}/utilities/config_keys.py"
         },
-        "utilities/lusid_retry.mustache": {
-            "destinationFilename": "${PACKAGE_NAME}/utilities/lusid_retry.py"
+        "utilities/retry.mustache": {
+            "destinationFilename": "${PACKAGE_NAME}/utilities/retry.py"
         },
         "utilities/proxy_config.mustache": {
             "destinationFilename": "${PACKAGE_NAME}/utilities/proxy_config.py"
