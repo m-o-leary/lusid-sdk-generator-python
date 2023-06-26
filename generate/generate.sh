@@ -83,6 +83,7 @@ rm -f $sdk_output_folder/swagger.json
 rm -rf $sdk_output_folder/.github/
 # rm -f $output_folder/.openapi-generator-ignore
 
+mkdir -p $output_folder/docs
 cp -R /tmp/docs/docs/* $output_folder/docs
 mkdir -p $output_folder/.github/
 cp -R /tmp/workflows/github/* $output_folder/.github/

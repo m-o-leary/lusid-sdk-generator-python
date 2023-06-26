@@ -35,11 +35,11 @@ generate-local:
     rm -f generate/.output/.openapi-generator-ignore
     docker run \
         -v $(pwd)/generate/.output:/usr/src \
-        finbourne/lusid-sdk-gen-python:latest -- "cd sdk; poetry add --group dev lusidfeature"
+        finbourne/lusid-sdk-gen-python:latest -- bash -ce "cd sdk; poetry add --group dev lusidfeature"
 
     docker run \
         -v $(pwd)/generate/.output:/usr/src \
-        finbourne/lusid-sdk-gen-python:latest -- "cd sdk; poetry install"
+        finbourne/lusid-sdk-gen-python:latest -- bash -ce "cd sdk; poetry install"
     
 generate TARGET_DIR:
     @just generate-local

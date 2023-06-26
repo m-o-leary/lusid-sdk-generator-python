@@ -5,17 +5,24 @@ RUN cargo install just
 FROM openapitools/openapi-generator-cli:latest-release as maven
 
 RUN apt update && apt -y install jq git
-# need to install the following fo python
-RUN apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev wget libbz2-dev
-RUN apt install -y python3 python3-distutils
-RUN curl -sSL https://install.python-poetry.org | python3 -
+# need to install the following for python
+RUN apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libsqlite3-dev libreadline-dev libffi-dev curl libbz2-dev liblzma-dev \
+    && cd tmp \
+    && curl -O https://www.python.org/ftp/python/3.8.2/Python-3.8.2.tar.xz \
+    && tar -xf Python-3.8.2.tar.xz \
+    && cd Python-3.8.2 \
+    && ./configure --enable-optimizations --enable-loadable-sqlite-extensions \
+    && make -j 4 \
+    && make altinstall \
+    && ln -s $(which python3.8) /usr/bin/python3 \
+    && curl -sSL https://install.python-poetry.org | python3 -
+
+ENV PATH=${PATH}:/root/.local/bin
 
 COPY --from=rust /usr/local/cargo/bin/just /usr/bin/just
 
 RUN mkdir -p /usr/src/
 WORKDIR /usr/src/
-
-ENTRYPOINT [ "/bin/bash" ]
 
 # Make ssh dir
 # Create known_hosts
