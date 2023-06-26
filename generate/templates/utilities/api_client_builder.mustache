@@ -3,7 +3,8 @@ import os
 from urllib3 import make_headers
 
 from {{packageName}}.configuration import Configuration
-from {{packageName}}.utilities.retry import RetryingClient
+from {{packageName}}.api_client import ApiClient
+from {{packageName}}.utilities.retry import RetryingRESTClientObject
 from {{packageName}}.utilities.api_configuration_loader import ApiConfigurationLoader
 from {{packageName}}.utilities.refreshing_token import RefreshingToken
 
@@ -132,7 +133,8 @@ class ApiClientBuilder:
                 )
 
         # Create and return the ApiClient
-        api_client = RetryingClient(configuration=config)
+        api_client = ApiClient(configuration=config)
+        api_client.rest_client = RetryingRESTClientObject(config)
 
         # set the application name if specified
         if configuration.app_name is not None:
