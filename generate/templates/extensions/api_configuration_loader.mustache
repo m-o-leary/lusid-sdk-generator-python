@@ -3,8 +3,8 @@ import os
 import logging
 import importlib
 
-from {{packageName}}.utilities.api_configuration import ApiConfiguration
-from {{packageName}}.utilities.proxy_config import ProxyConfig
+from {{packageName}}.extensions.api_configuration import ApiConfiguration
+from {{packageName}}.extensions.proxy_config import ProxyConfig
 
 
 class ApiConfigurationLoader:
@@ -17,14 +17,14 @@ class ApiConfigurationLoader:
         """
         :param str api_secrets_filename: The full path to the JSON file containing the API credentials and optional proxy details
 
-        :return: {{packageName}}.utilities.ApiConfiguration: The populated ApiConfiguration
+        :return: {{packageName}}.extensions.ApiConfiguration: The populated ApiConfiguration
         """
 
         # Get the config keys which contain the mapping between the ApiConfiguration attributes and the variable names
         # in the secrets.json file and environment variables e.g. token_url is tokenUrl (secrets.json) and
         # FBN_TOKEN_URL (env variable)
         with importlib.resources.path(
-            "{{packageName}}.utilities", "config_keys.json"
+            "{{packageName}}.extensions", "config_keys.json"
         ) as path:
             with open(path, "r") as config_key_file:
                 config_keys = json.load(config_key_file)

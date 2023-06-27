@@ -22,5 +22,5 @@ from {{packageName}}.exceptions import ApiException
 # import models into sdk package
 {{#models}}{{#model}}from {{modelPackage}}.{{classFilename}} import {{classname}}
 {{/model}}{{/models}}
-# import utilities into sdk package
-from {{packageName}}.utilities import *
+# import extensions into sdk package
+from {{packageName}}.extensions import *
