@@ -1,0 +1,44 @@
+import functools
+from asyncio import sleep
+
+from {{packageName}} import ApiException
+from {{packageName}}.rest import RESTClientObject
+
+class RetryingRESTClientObject(RESTClientObject):
+    def __init__(self, configuration, pools_size=4, maxsize=None, retries:int=3):
+        super().__init__(configuration, pools_size=4, maxsize=None)
+        self.retries:int = retries
+
+    async def request(self, method, url, query_params=None, headers=None,
+                      body=None, post_params=None, _preload_content=True,
+                      _request_timeout=None):
+        if not isinstance(self.retries, int):
+            raise ValueError(f"retries should be an int, found {type(retries)}")
+        tries = 0
+        while tries < self.retries + 1:
+            try:
+                return await super().request(method, url, query_params, headers,
+                      body, post_params, _preload_content,
+                      _request_timeout)
+            except ApiException as ex:
+                tries += 1
+                retry_after = ex.headers.get("Retry-After")
+
+                # have done max number of retries
+                if tries >= self.retries:
+                    raise
+
+                # try after delay
+                elif retry_after is not None:
+                    if not isinstance(retry_after, float):
+                        try:
+                            retry_after = float(retry_after)
+                        except ValueError:
+                            raise ValueError(
+                                f"invalid Retry-After header value: {retry_after}"
+                            )
+                    sleep(retry_after)
+                # no retry header
+                else:
+                    raise
+                    
