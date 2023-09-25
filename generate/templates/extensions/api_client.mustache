@@ -20,7 +20,7 @@ import tornado.gen
 from {{packageName}}.configuration import Configuration
 from {{packageName}}.api_response import ApiResponse
 import {{modelPackage}}
-from {{packageName}} import rest
+from {{packageName}}.extensions import rest
 from {{packageName}}.exceptions import ApiValueError, ApiException
 
 
@@ -75,25 +75,14 @@ class ApiClient:
         self.user_agent = '{{{httpUserAgent}}}{{^httpUserAgent}}OpenAPI-Generator/{{{packageVersion}}}/python{{/httpUserAgent}}'
         self.client_side_validation = configuration.client_side_validation
 
-    {{#asyncio}}
-    async def __aenter__(self):
-        return self
 
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        await self.close()
-    {{/asyncio}}
-    {{^asyncio}}
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
-    {{/asyncio}}
 
-    {{#asyncio}}async {{/asyncio}}def close(self):
-        {{#asyncio}}
-        await self.rest_client.close()
-        {{/asyncio}}
+    def close(self):
         if self._pool:
             self._pool.close()
             self._pool.join()
@@ -153,7 +142,7 @@ class ApiClient:
     {{#tornado}}
     @tornado.gen.coroutine
     {{/tornado}}
-    {{#asyncio}}async {{/asyncio}}def __call_api(
+    def __call_api(
             self, resource_path, method, path_params=None,
             query_params=None, header_params=None, body=None, post_params=None,
             files=None, response_types_map=None, auth_settings=None,
@@ -219,7 +208,7 @@ class ApiClient:
 
         try:
             # perform request and return response
-            response_data = {{#asyncio}}await {{/asyncio}}{{#tornado}}yield {{/tornado}}self.request(
+            response_data = {{#tornado}}yield {{/tornado}}self.request(
                 method, url,
                 query_params=query_params,
                 headers=header_params,

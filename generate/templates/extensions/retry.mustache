@@ -1,25 +1,41 @@
-import functools
-from asyncio import sleep
+import time
+from typing import overload
 
 from {{packageName}} import ApiException
-from {{packageName}}.rest import RESTClientObject
+import asyncio
 
-class RetryingRESTClientObject(RESTClientObject):
-    def __init__(self, configuration, pools_size=4, maxsize=None, retries:int=3):
-        super().__init__(configuration, pools_size=4, maxsize=None)
-        self.retries:int = retries
 
-    async def request(self, method, url, query_params=None, headers=None,
-                      body=None, post_params=None, _preload_content=True,
-                      _request_timeout=None):
-        if not isinstance(self.retries, int):
-            raise ValueError(f"retries should be an int, found {type(retries)}")
+class RetryingRestWrapper:
+    def __init__(self, rest_object, retries: int = 3):
+        if not isinstance(retries, int):
+            raise ValueError(f"retries should be an int, found {type(self.retries)}")
+        self.retries: int = retries
+        self.rest_object = rest_object
+
+    def request(
+        self,
+        method,
+        url,
+        query_params=None,
+        headers=None,
+        body=None,
+        post_params=None,
+        _preload_content=True,
+        _request_timeout=None,
+    ):
         tries = 0
         while tries < self.retries + 1:
             try:
-                return await super().request(method, url, query_params, headers,
-                      body, post_params, _preload_content,
-                      _request_timeout)
+                return self.rest_object.request(
+                    method,
+                    url,
+                    query_params,
+                    headers,
+                    body,
+                    post_params,
+                    _preload_content,
+                    _request_timeout,
+                )
             except ApiException as ex:
                 tries += 1
                 retry_after = ex.headers.get("Retry-After")
@@ -37,8 +53,311 @@ class RetryingRESTClientObject(RESTClientObject):
                             raise ValueError(
                                 f"invalid Retry-After header value: {retry_after}"
                             )
-                    sleep(retry_after)
+                    time.sleep(retry_after)
                 # no retry header
                 else:
                     raise
-                    
+
+    def get_request(
+        self,
+        url,
+        headers=None,
+        query_params=None,
+        _preload_content=True,
+        _request_timeout=None,
+    ):
+        return self.rest_object.get_request(
+            url, headers, query_params, _preload_content, _request_timeout
+        )
+
+    def head_request(
+        self,
+        url,
+        headers=None,
+        query_params=None,
+        _preload_content=True,
+        _request_timeout=None,
+    ):
+        return self.rest_object.head_request(
+            url, headers, query_params, _preload_content, _request_timeout
+        )
+
+    def options_request(
+        self,
+        url,
+        headers=None,
+        query_params=None,
+        post_params=None,
+        body=None,
+        _preload_content=True,
+        _request_timeout=None,
+    ):
+        return self.rest_object.options_request(
+            url,
+            headers,
+            query_params,
+            post_params,
+            body,
+            _preload_content,
+            _request_timeout,
+        )
+
+    def delete_request(
+        self,
+        url,
+        headers=None,
+        query_params=None,
+        body=None,
+        _preload_content=True,
+        _request_timeout=None,
+    ):
+        return self.rest_object.delete_request(
+            url, headers, query_params, body, _preload_content, _request_timeout
+        )
+
+    def post_request(
+        self,
+        url,
+        headers=None,
+        query_params=None,
+        post_params=None,
+        body=None,
+        _preload_content=True,
+        _request_timeout=None,
+    ):
+        return self.rest_object.post_request(
+            url,
+            headers,
+            query_params,
+            post_params,
+            body,
+            _preload_content,
+            _request_timeout,
+        )
+
+    def put_request(
+        self,
+        url,
+        headers=None,
+        query_params=None,
+        post_params=None,
+        body=None,
+        _preload_content=True,
+        _request_timeout=None,
+    ):
+        return self.rest_object.put_request(
+            url,
+            headers,
+            query_params,
+            post_params,
+            body,
+            _preload_content,
+            _request_timeout,
+        )
+
+    def patch_request(
+        self,
+        url,
+        headers=None,
+        query_params=None,
+        post_params=None,
+        body=None,
+        _preload_content=True,
+        _request_timeout=None,
+    ):
+        return self.rest_object.patch_request(
+            url,
+            headers,
+            query_params,
+            post_params,
+            body,
+            _preload_content,
+            _request_timeout,
+        )
+
+
+class RetryingRestWrapperAsync:
+    def __init__(self, rest_object, retries: int = 3):
+        if not isinstance(retries, int):
+            raise ValueError(f"retries should be an int, found {type(self.retries)}")
+        self.retries: int = retries
+        self.rest_object = rest_object
+
+    async def close(self):
+        await self.rest_object.close()
+
+    async def request(
+        self,
+        method,
+        url,
+        query_params=None,
+        headers=None,
+        body=None,
+        post_params=None,
+        _preload_content=True,
+        _request_timeout=None,
+    ):
+        tries = 0
+        while tries < self.retries + 1:
+            try:
+                return await self.pool_manager.request(
+                    method,
+                    url,
+                    query_params,
+                    headers,
+                    body,
+                    post_params,
+                    _preload_content,
+                    _request_timeout,
+                )
+            except ApiException as ex:
+                tries += 1
+                retry_after = ex.headers.get("Retry-After")
+
+                # have done max number of retries
+                if tries >= self.retries:
+                    raise
+
+                # try after delay
+                elif retry_after is not None:
+                    if not isinstance(retry_after, float):
+                        try:
+                            retry_after = float(retry_after)
+                        except ValueError:
+                            raise ValueError(
+                                f"invalid Retry-After header value: {retry_after}"
+                            )
+                    asyncio.sleep(retry_after)
+                # no retry header
+                else:
+                    raise
+
+    async def get_request(
+        self,
+        url,
+        headers=None,
+        query_params=None,
+        _preload_content=True,
+        _request_timeout=None,
+    ):
+        return await self.rest_object.get_request(
+            url,
+            headers,
+            query_params,
+            _preload_content,
+            _request_timeout,
+        )
+
+    async def head_request(
+        self,
+        url,
+        headers=None,
+        query_params=None,
+        _preload_content=True,
+        _request_timeout=None,
+    ):
+        return await self.rest_object.head_request(
+            url,
+            headers,
+            query_params,
+            _preload_content,
+            _request_timeout,
+        )
+
+    async def options_request(
+        self,
+        url,
+        headers=None,
+        query_params=None,
+        post_params=None,
+        body=None,
+        _preload_content=True,
+        _request_timeout=None,
+    ):
+        return await self.rest_object.options_request(
+            url,
+            headers,
+            query_params,
+            post_params,
+            body,
+            _preload_content,
+            _request_timeout,
+        )
+
+    async def delete_request(
+        self,
+        url,
+        headers=None,
+        query_params=None,
+        body=None,
+        _preload_content=True,
+        _request_timeout=None,
+    ):
+        return await self.rest_object.delete_request(
+            url,
+            headers,
+            query_params,
+            body,
+            _preload_content,
+            _request_timeout,
+        )
+
+    async def post_request(
+        self,
+        url,
+        headers=None,
+        query_params=None,
+        post_params=None,
+        body=None,
+        _preload_content=True,
+        _request_timeout=None,
+    ):
+        return await self.rest_object.post_request(
+            url,
+            headers,
+            query_params,
+            post_params,
+            body,
+            _preload_content,
+            _request_timeout,
+        )
+
+    async def put_request(
+        self,
+        url,
+        headers=None,
+        query_params=None,
+        post_params=None,
+        body=None,
+        _preload_content=True,
+        _request_timeout=None,
+    ):
+        return await self.rest_object.put_request(
+            url,
+            headers,
+            query_params,
+            post_params,
+            body,
+            _preload_content,
+            _request_timeout,
+        )
+
+    async def patch_request(
+        self,
+        url,
+        headers=None,
+        query_params=None,
+        post_params=None,
+        body=None,
+        _preload_content=True,
+        _request_timeout=None,
+    ):
+        return await self.rest_object.patch_request(
+            url,
+            headers,
+            query_params,
+            post_params,
+            body,
+            _preload_content,
+            _request_timeout,
+        )

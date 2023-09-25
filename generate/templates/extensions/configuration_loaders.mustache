@@ -1,0 +1,117 @@
+import json
+import os
+import importlib
+from typing import Dict, TextIO, Protocol, Union, IO, Callable
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def get_config_keys(get_resource_path=importlib.resources.path, open_file=open):
+    # Get the config keys which contain the mapping between the ApiConfiguration attributes and the variable names
+    # in the secrets.json file and environment variables e.g. token_url is tokenUrl (secrets.json) and
+    # FBN_TOKEN_URL (env variable)
+    with get_resource_path("{{packageName}}.extensions", "config_keys.json") as path:
+        with open_file(path, "r") as config_key_file:
+            config_keys = json.load(config_key_file)
+    return config_keys
+
+
+class ConfigurationLoader(Protocol):
+    """
+    The ApiConfigurationLoader is responsible for populating the API and Proxy configuration from a secrets file or
+    environment variables with preference given to the secrets file.
+    """
+
+    def load_config(self) -> Dict[str, str]:
+        pass
+
+
+class SecretsFileConfigurationLoader:
+    def __init__(
+        self,
+        api_secrets_file: Union[TextIO, str],
+        get_config_keys=get_config_keys,
+        open: Callable[..., IO] = open,
+    ):
+        self._api_secrets_file = api_secrets_file
+        self._get_config_keys = get_config_keys
+        self._open = open
+
+    def load_config(self) -> Dict[str, str]:
+        # The secrets file is a nested dictionary, set the names of the top level keys
+        logger.debug(f"loading config from secrets file: {self._api_secrets_file}")
+        api_config_key = "api"
+        proxy_config_key = "proxy"
+        try:
+            try:
+                config = json.load(self._api_secrets_file)
+            except AttributeError:
+                with self._open(self._api_secrets_file) as api_secrets_file:
+                    config = json.load(api_secrets_file)
+        except OSError:
+            logger.exception(f"unable to open secrets file {self._api_secrets_file}")
+            raise
+        except json.JSONDecodeError:
+            logger.exception("unable to deserialise contents of secrets file to json")
+            raise
+        config_keys = self._get_config_keys()
+
+        populated_api_config_values = {
+            key: config.get(api_config_key, {}).get(value["config"])
+            for key, value in config_keys.items()
+            if "proxy" not in key
+        }
+        populated_proxy_values = {
+            key: config.get(proxy_config_key, {}).get(value["config"])
+            for key, value in config_keys.items()
+            if "proxy" in key
+        }
+        populated_config_dict = {
+            **populated_api_config_values,
+            **populated_proxy_values,
+        }
+        return populated_config_dict
+
+
+class EnvironmentVariablesConfigurationLoader:
+    def __init__(self, get_config=os.environ.get, get_config_keys=get_config_keys):
+        self._get_config = get_config
+        self._get_config_keys = get_config_keys
+
+    def load_config(self):
+        logger.debug(f"loading config from environment variables")
+
+        config_keys = self._get_config_keys()
+        populated_api_config_values = {
+            key: self._get_config(value["env"])
+            for key, value in config_keys.items()
+            if "proxy" not in key
+        }
+        populated_proxy_values = {
+            key: self._get_config(value["env"])
+            for key, value in config_keys.items()
+            if "proxy" in key
+        }
+        populated_config_dict = {
+            **populated_api_config_values,
+            **populated_proxy_values,
+        }
+        return populated_config_dict
+
+
+class ArgsConfigurationLoader:
+    def __init__(self, get_config_keys=get_config_keys, **kwargs):
+        self._get_config_keys = get_config_keys
+        self._kwargs = kwargs
+
+    def load_config(self):
+        logger.debug(f"loading config from arguments passed to ArgsConfigurationLoader")
+        keys = self._get_config_keys().keys()
+        return {key: self._kwargs.get(key) for key in keys}
+
+
+default_config_loaders = (
+    EnvironmentVariablesConfigurationLoader(),
+    SecretsFileConfigurationLoader(api_secrets_file="secrets.json"),
+)

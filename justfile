@@ -14,7 +14,7 @@ export PYPI_PACKAGE_LOCATION := `echo ${PYPI_PACKAGE_LOCATION:-~/.pypi/packages}
 
 swagger_path := "./swagger.json"
 
-swagger_url := "https://example.lusid.com/api/swagger/v0/swagger.json"
+swagger_url := "https://fbn-prd.lusid.com/api/swagger/v0/swagger.json"
 
 get-swagger:
     echo {{swagger_url}}
@@ -23,23 +23,30 @@ get-swagger:
 build-docker-images: 
     docker build -t finbourne/lusid-sdk-gen-python:latest --ssh default=$SSH_AUTH_SOCK -f Dockerfile .
 
+generate-templates:
+    envsubst < generate/config-template.json > generate/.config.json
+    docker run \
+        -v {{justfile_directory()}}/.templates:/usr/src/templates \
+        finbourne/lusid-sdk-gen-python:latest -- java -jar /opt/openapi-generator/modules/openapi-generator-cli/target/openapi-generator-cli.jar author template -g python -o /usr/src/templates
+
 generate-local:
     envsubst < generate/config-template.json > generate/.config.json
     docker run \
-        -e JAVA_OPTS="-Dlog.level=error" \
+        -e JAVA_OPTS="-Dlog.level=error -Xmx6g" \
         -e PACKAGE_VERSION=${PACKAGE_VERSION} \
-        -v $(pwd)/generate/:/usr/src/generate/ \
-        -v $(pwd)/generate/.openapi-generator-ignore:/usr/src/generate/.output/.openapi-generator-ignore \
-        -v $(pwd)/{{swagger_path}}:/tmp/swagger.json \
+        -v {{justfile_directory()}}/generate/:/usr/src/generate/ \
+        -v {{justfile_directory()}}/generate/.openapi-generator-ignore:/usr/src/generate/.output/.openapi-generator-ignore \
+        -v {{justfile_directory()}}/{{swagger_path}}:/tmp/swagger.json \
         finbourne/lusid-sdk-gen-python:latest -- ./generate/generate.sh ./generate ./generate/.output /tmp/swagger.json .config.json
     rm -f generate/.output/.openapi-generator-ignore
-    docker run \
-        -v $(pwd)/generate/.output:/usr/src \
-        finbourne/lusid-sdk-gen-python:latest -- bash -ce "cd sdk; poetry add --group dev lusidfeature"
 
-    docker run \
-        -v $(pwd)/generate/.output:/usr/src \
-        finbourne/lusid-sdk-gen-python:latest -- bash -ce "cd sdk; poetry install"
+link-tests:
+    ln -s {{justfile_directory()}}/test_sdk/ {{justfile_directory()}}/generate/.output/sdk/test 
+ 
+test-local:
+    @just generate-local
+    @just link-tests
+    cd {{justfile_directory()}}/generate/.output/sdk && poetry install && poetry run pytest
     
 generate TARGET_DIR:
     @just generate-local

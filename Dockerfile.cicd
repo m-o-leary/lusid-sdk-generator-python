@@ -2,7 +2,7 @@ FROM rust:slim-buster as rust
 
 RUN cargo install just
 
-FROM openapitools/openapi-generator-cli:v7.0.0 as maven
+FROM openapitools/openapi-generator-cli:v7.0.1 as maven
 
 RUN apt update && apt -y install jq git gettext-base libicu-dev
 # need to install the following for python

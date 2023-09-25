@@ -2,7 +2,7 @@ FROM rust:slim-buster as rust
 
 RUN cargo install just
 
-FROM openapitools/openapi-generator-cli:v7.0.0 as maven
+FROM openapitools/openapi-generator-cli:v7.0.1 as maven
 
 RUN apt update && apt -y install jq git gettext-base libicu-dev
 # need to install the following for python
@@ -15,6 +15,7 @@ RUN apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss
     && make -j 4 \
     && make altinstall \
     && ln -s $(which python3.8) /usr/bin/python3 \
+    && ln -s $(which python3.8) /usr/bin/python \
     && curl -sSL https://install.python-poetry.org | python3 -
 
 ENV PATH=${PATH}:/root/.local/bin
