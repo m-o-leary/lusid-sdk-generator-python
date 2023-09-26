@@ -1,21 +1,40 @@
 import json
 import os
-import importlib
+from importlib.resources import as_file, files
 from typing import Dict, TextIO, Protocol, Union, IO, Callable
 import logging
 
 logger = logging.getLogger(__name__)
 
+ENVIRONMENT_CONFIG_KEYS = {
+  "token_url": "FBN_TOKEN_URL",
+  "api_url":{{#lambda.uppercase}}"FBN_{{packageName}}_API_URL"{{/lambda.uppercase}},
+  "username": "FBN_USERNAME",
+  "password": "FBN_PASSWORD",
+  "client_id": "FBN_CLIENT_ID",
+  "client_secret": "FBN_CLIENT_SECRET",
+  "app_name": "FBN_APP_NAME",
+  "certificate_filename": "FBN_CLIENT_CERTIFICATE",
+  "proxy_address": "FBN_PROXY_ADDRESS",
+  "proxy_username": "FBN_PROXY_USERNAME",
+  "proxy_password": "FBN_PROXY_PASSWORD",
+  "access_token": "FBN_ACCESS_TOKEN"
+}
 
-def get_config_keys(get_resource_path=importlib.resources.path, open_file=open):
-    # Get the config keys which contain the mapping between the ApiConfiguration attributes and the variable names
-    # in the secrets.json file and environment variables e.g. token_url is tokenUrl (secrets.json) and
-    # FBN_TOKEN_URL (env variable)
-    with get_resource_path("{{packageName}}.extensions", "config_keys.json") as path:
-        with open_file(path, "r") as config_key_file:
-            config_keys = json.load(config_key_file)
-    return config_keys
-
+SECRETS_FILE_CONFIG_KEYS = {
+  "token_url": "tokenUrl",
+  "api_url": "{{#lambda.camelcase}}{{^isLusidPackage}}{{packageName}}{{/isLusidPackage}}-api-Url{{/lambda.camelcase}}",
+  "username": "username",
+  "password": "password",
+  "client_id": "clientId",
+  "client_secret": "clientSecret",
+  "app_name": "applicationName",
+  "certificate_filename": "clientCertificate",
+  "proxy_address": "address",
+  "proxy_username": "username",
+  "proxy_password": "password",
+  "access_token": "accessToken"
+}
 
 class ConfigurationLoader(Protocol):
     """
@@ -31,11 +50,9 @@ class SecretsFileConfigurationLoader:
     def __init__(
         self,
         api_secrets_file: Union[TextIO, str],
-        get_config_keys=get_config_keys,
         open: Callable[..., IO] = open,
     ):
         self._api_secrets_file = api_secrets_file
-        self._get_config_keys = get_config_keys
         self._open = open
 
     def load_config(self) -> Dict[str, str]:
@@ -55,16 +72,15 @@ class SecretsFileConfigurationLoader:
         except json.JSONDecodeError:
             logger.exception("unable to deserialise contents of secrets file to json")
             raise
-        config_keys = self._get_config_keys()
 
         populated_api_config_values = {
-            key: config.get(api_config_key, {}).get(value["config"])
-            for key, value in config_keys.items()
+            key: config.get(api_config_key, {}).get(value)
+            for key, value in SECRETS_FILE_CONFIG_KEYS.items()
             if "proxy" not in key
         }
         populated_proxy_values = {
-            key: config.get(proxy_config_key, {}).get(value["config"])
-            for key, value in config_keys.items()
+            key: config.get(proxy_config_key, {}).get(value)
+            for key, value in SECRETS_FILE_CONFIG_KEYS.items()
             if "proxy" in key
         }
         populated_config_dict = {
@@ -75,22 +91,20 @@ class SecretsFileConfigurationLoader:
 
 
 class EnvironmentVariablesConfigurationLoader:
-    def __init__(self, get_config=os.environ.get, get_config_keys=get_config_keys):
+    def __init__(self, get_config=os.environ.get):
         self._get_config = get_config
-        self._get_config_keys = get_config_keys
 
-    def load_config(self):
+    def load_config(self) -> Dict[str, str]:
         logger.debug(f"loading config from environment variables")
 
-        config_keys = self._get_config_keys()
         populated_api_config_values = {
-            key: self._get_config(value["env"])
-            for key, value in config_keys.items()
+            key: self._get_config(value)
+            for key, value in ENVIRONMENT_CONFIG_KEYS.items()
             if "proxy" not in key
         }
         populated_proxy_values = {
-            key: self._get_config(value["env"])
-            for key, value in config_keys.items()
+            key: self._get_config(value)
+            for key, value in ENVIRONMENT_CONFIG_KEYS.items()
             if "proxy" in key
         }
         populated_config_dict = {
@@ -101,13 +115,12 @@ class EnvironmentVariablesConfigurationLoader:
 
 
 class ArgsConfigurationLoader:
-    def __init__(self, get_config_keys=get_config_keys, **kwargs):
-        self._get_config_keys = get_config_keys
+    def __init__(self, **kwargs):
         self._kwargs = kwargs
 
-    def load_config(self):
-        logger.debug(f"loading config from arguments passed to ArgsConfigurationLoader")
-        keys = self._get_config_keys().keys()
+    def load_config(self) -> Dict[str, str]:
+        logger.debug("loading config from arguments passed to ArgsConfigurationLoader")
+        keys = ENVIRONMENT_CONFIG_KEYS.keys()
         return {key: self._kwargs.get(key) for key in keys}
 
 

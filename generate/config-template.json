@@ -26,12 +26,6 @@
         "extensions/api_configuration.mustache": {
             "destinationFilename": "${PACKAGE_NAME}/extensions/api_configuration.py"
         },
-        "extensions/config_keys_json.mustache": {
-            "destinationFilename": "${PACKAGE_NAME}/extensions/config_keys.json"
-        },
-        "extensions/config_keys_py.mustache": {
-            "destinationFilename": "${PACKAGE_NAME}/extensions/config_keys.py"
-        },
         "extensions/retry.mustache": {
             "destinationFilename": "${PACKAGE_NAME}/extensions/retry.py"
         },
