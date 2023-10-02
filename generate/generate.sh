@@ -62,7 +62,7 @@ echo "[INFO] generating sdk version: ${PACKAGE_VERSION}"
 # generate the SDK
 java ${JAVA_OPTS} -jar /opt/openapi-generator/modules/openapi-generator-cli/target/openapi-generator-cli.jar generate \
     -i $sdk_output_folder/swagger.json \
-    -g python-nextgen \
+    -g python \
     -o $sdk_output_folder \
     -t $gen_root/templates \
     -c $config_file

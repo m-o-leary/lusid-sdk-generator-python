@@ -8,6 +8,8 @@
     "licenseInfo": "MIT",
     "datetimeFormat": "%Y-%m-%dT%H:%M:%S.%fZ",
     "isLusidPackage": true,
+    "gitUserId": "${GIT_USER_ID}",
+    "gitRepoId": "${GIT_REPO_ID}",
     "files": {
         "extensions/api_client_builder.mustache": {
             "destinationFilename": "${PACKAGE_NAME}/extensions/api_client_builder.py"

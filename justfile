@@ -51,10 +51,29 @@ generate TARGET_DIR:
     
     cp -R generate/.output/* {{TARGET_DIR}}
 
+# Generate an SDK from a swagger.json and copy the output to the TARGET_DIR
+generate-cicd TARGET_DIR:
+    mkdir -p {{TARGET_DIR}}
+    mkdir -p ./generate/.output
+    envsubst < generate/config-template.json > generate/.config.json
+    cp ./generate/.openapi-generator-ignore ./generate/.output/.openapi-generator-ignore
+
+    ./generate/generate.sh ./generate ./generate/.output {{swagger_path}} .config.json
+    rm -f generate/.output/.openapi-generator-ignore
+
+    # need to remove the created content before copying over the top of it.
+    # this prevents deleted content from hanging around indefinitely.
+    rm -rf {{TARGET_DIR}}/sdk/${PACKAGE_NAME}
+    rm -rf {{TARGET_DIR}}/sdk/docs
+    
+    cp -R generate/.output/. {{TARGET_DIR}}
+    echo "copied output to {{TARGET_DIR}}"
+    ls {{TARGET_DIR}}
+
 publish-only-local:
     docker run \
         -v $(pwd)/generate/.output:/usr/src \
-        finbourne/lusid-sdk-gen-python:latest -- "cd sdk; poetry build"
+        finbourne/lusid-sdk-gen-python:latest -- bash -ce "cd sdk; poetry build"
     mkdir -p ${PYPI_PACKAGE_LOCATION}
     cp generate/.output/sdk/dist/* ${PYPI_PACKAGE_LOCATION}
 
@@ -62,12 +81,11 @@ publish-only:
     docker run \
         -e POETRY_PYPI_TOKEN_PYPI:${PYPI_TOKEN} \
         -v $(pwd)/generate/.output:/usr/src \
-        finbourne/lusid-sdk-gen-python:latest -- "cd sdk; poetry publish"
+        finbourne/lusid-sdk-gen-python:latest -- bash -ce "cd sdk; poetry publish"
 
 publish-cicd SRC_DIR:
     echo "PACKAGE_VERSION to publish: ${PACKAGE_VERSION}"
-    cd {{SRC_DIR}}/sdk
-    poetry publish
+    poetry publish --build --repository ${REPOSITORY_NAME} --directory {{SRC_DIR}}/sdk
 
 publish-to SRC_DIR OUT_DIR:
     echo "PACKAGE_VERSION to publish: ${PACKAGE_VERSION}"

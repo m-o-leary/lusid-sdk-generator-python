@@ -1,10 +1,10 @@
-FROM rust:latest as rust
+FROM rust:slim-buster as rust
 
 RUN cargo install just
 
-FROM openapitools/openapi-generator-cli:latest-release as maven
+FROM openapitools/openapi-generator-cli:v7.0.0 as maven
 
-RUN apt update && apt -y install jq git
+RUN apt update && apt -y install jq git gettext-base libicu-dev
 # need to install the following for python
 RUN apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libsqlite3-dev libreadline-dev libffi-dev curl libbz2-dev liblzma-dev \
     && cd tmp \
