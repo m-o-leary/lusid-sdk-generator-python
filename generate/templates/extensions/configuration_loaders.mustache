@@ -1,40 +1,42 @@
 import json
 import os
-from importlib.resources import as_file, files
-from typing import Dict, TextIO, Protocol, Union, IO, Callable
+from typing import Dict, TextIO, Protocol, Union, Iterable
 import logging
+from {{packageName}}.extensions.proxy_config import ProxyConfig
+from {{packageName}}.extensions.api_configuration import ApiConfiguration
 
 logger = logging.getLogger(__name__)
 
 ENVIRONMENT_CONFIG_KEYS = {
-  "token_url": "FBN_TOKEN_URL",
-  "api_url":{{#lambda.uppercase}}"FBN_{{packageName}}_API_URL"{{/lambda.uppercase}},
-  "username": "FBN_USERNAME",
-  "password": "FBN_PASSWORD",
-  "client_id": "FBN_CLIENT_ID",
-  "client_secret": "FBN_CLIENT_SECRET",
-  "app_name": "FBN_APP_NAME",
-  "certificate_filename": "FBN_CLIENT_CERTIFICATE",
-  "proxy_address": "FBN_PROXY_ADDRESS",
-  "proxy_username": "FBN_PROXY_USERNAME",
-  "proxy_password": "FBN_PROXY_PASSWORD",
-  "access_token": "FBN_ACCESS_TOKEN"
+    "token_url": "FBN_TOKEN_URL",
+    "api_url": {{#lambda.uppercase}}"FBN_{{packageName}}_API_URL"{{/lambda.uppercase}},
+    "username": "FBN_USERNAME",
+    "password": "FBN_PASSWORD",
+    "client_id": "FBN_CLIENT_ID",
+    "client_secret": "FBN_CLIENT_SECRET",
+    "app_name": "FBN_APP_NAME",
+    "certificate_filename": "FBN_CLIENT_CERTIFICATE",
+    "proxy_address": "FBN_PROXY_ADDRESS",
+    "proxy_username": "FBN_PROXY_USERNAME",
+    "proxy_password": "FBN_PROXY_PASSWORD",
+    "access_token": "FBN_ACCESS_TOKEN"
 }
 
 SECRETS_FILE_CONFIG_KEYS = {
-  "token_url": "tokenUrl",
-  "api_url": "{{#lambda.camelcase}}{{^isLusidPackage}}{{packageName}}{{/isLusidPackage}}-api-Url{{/lambda.camelcase}}",
-  "username": "username",
-  "password": "password",
-  "client_id": "clientId",
-  "client_secret": "clientSecret",
-  "app_name": "applicationName",
-  "certificate_filename": "clientCertificate",
-  "proxy_address": "address",
-  "proxy_username": "username",
-  "proxy_password": "password",
-  "access_token": "accessToken"
+    "token_url": "tokenUrl",
+    "api_url": "{{#lambda.camelcase}}{{^isLusidPackage}}{{packageName}}{{/isLusidPackage}}-api-Url{{/lambda.camelcase}}",
+    "username": "username",
+    "password": "password",
+    "client_id": "clientId",
+    "client_secret": "clientSecret",
+    "app_name": "applicationName",
+    "certificate_filename": "clientCertificate",
+    "proxy_address": "address",
+    "proxy_username": "username",
+    "proxy_password": "password",
+    "access_token": "accessToken"
 }
+
 
 class ConfigurationLoader(Protocol):
     """
@@ -49,11 +51,9 @@ class ConfigurationLoader(Protocol):
 class SecretsFileConfigurationLoader:
     def __init__(
         self,
-        api_secrets_file: Union[TextIO, str],
-        open: Callable[..., IO] = open,
+        api_secrets_file: Union[TextIO, str]
     ):
-        self._api_secrets_file = api_secrets_file
-        self._open = open
+        self._api_secrets_file = api_secrets_file or ""
 
     def load_config(self) -> Dict[str, str]:
         # The secrets file is a nested dictionary, set the names of the top level keys
@@ -64,22 +64,24 @@ class SecretsFileConfigurationLoader:
             try:
                 config = json.load(self._api_secrets_file)
             except AttributeError:
-                with self._open(self._api_secrets_file) as api_secrets_file:
+                with open(self._api_secrets_file) as api_secrets_file:
                     config = json.load(api_secrets_file)
         except OSError:
-            logger.exception(f"unable to open secrets file {self._api_secrets_file}")
-            raise
+            logger.warning(f"Unable to open secrets file {self._api_secrets_file}")
+            return {}
         except json.JSONDecodeError:
-            logger.exception("unable to deserialise contents of secrets file to json")
-            raise
+            logger.warning("unable to deserialise contents of secrets file to json")
+            return {}
 
+        api_config_section = config.get(api_config_key, {})
         populated_api_config_values = {
-            key: config.get(api_config_key, {}).get(value)
+            key: api_config_section.get(value)
             for key, value in SECRETS_FILE_CONFIG_KEYS.items()
             if "proxy" not in key
         }
+        proxy_config_section = config.get(proxy_config_key, {})
         populated_proxy_values = {
-            key: config.get(proxy_config_key, {}).get(value)
+            key: proxy_config_section.get(value)
             for key, value in SECRETS_FILE_CONFIG_KEYS.items()
             if "proxy" in key
         }
@@ -91,19 +93,16 @@ class SecretsFileConfigurationLoader:
 
 
 class EnvironmentVariablesConfigurationLoader:
-    def __init__(self, get_config=os.environ.get):
-        self._get_config = get_config
-
     def load_config(self) -> Dict[str, str]:
-        logger.debug(f"loading config from environment variables")
+        logger.debug("loading config from environment variables")
 
         populated_api_config_values = {
-            key: self._get_config(value)
+            key: os.environ.get(value)
             for key, value in ENVIRONMENT_CONFIG_KEYS.items()
             if "proxy" not in key
         }
         populated_proxy_values = {
-            key: self._get_config(value)
+            key: os.environ.get(value)
             for key, value in ENVIRONMENT_CONFIG_KEYS.items()
             if "proxy" in key
         }
@@ -128,3 +127,28 @@ default_config_loaders = (
     EnvironmentVariablesConfigurationLoader(),
     SecretsFileConfigurationLoader(api_secrets_file="secrets.json"),
 )
+
+def get_api_configuration(config_loaders: Iterable[ConfigurationLoader]) -> ApiConfiguration:
+    config = {}
+
+    for config_loader in config_loaders:
+        loaded_config = {
+            key: value
+            for key, value in config_loader.load_config().items()
+            if value is not None
+        }
+        config.update(loaded_config)
+    proxy_address = config.pop("proxy_address", None)
+    proxy_username = config.pop("proxy_username", None)
+    proxy_password = config.pop("proxy_password", None)
+    # If the proxy address is missing ensure that no proxy is used in the ApiConfiguration
+    if all(
+        (item is not None for item in (proxy_address, proxy_password, proxy_username))
+    ):
+        config["proxy_config"] = ProxyConfig(
+            address=proxy_address, username=proxy_username, password=proxy_password
+        )
+    else:
+        config["proxy_config"] = None
+    # Create and return the ApiConfiguration
+    return ApiConfiguration(**config)

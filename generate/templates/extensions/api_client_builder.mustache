@@ -49,16 +49,14 @@ def build_client(
     build_async_client=False,
     id_provider_response_handler=None,
     tcp_keep_alive=False,
-    certificate_filename=None,
     correlation_id=None,
     app_name=None,
-    get_access_token=get_access_token,
 ) -> Union[AsyncApiClient, ApiClient]:
-    config = Configuration(access_token = get_access_token(api_config))
+    config = Configuration(access_token=get_access_token(api_config))
     if tcp_keep_alive:
         config.socket_options = HTTPConnection.default_socket_options + [
-                (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
-            ]
+            (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
+        ]
     config.host = api_config.api_url
 
     # Set the certificate from the configuration

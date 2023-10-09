@@ -41,12 +41,14 @@ generate-local:
     rm -f generate/.output/.openapi-generator-ignore
 
 link-tests:
-    ln -s {{justfile_directory()}}/test_sdk/ {{justfile_directory()}}/generate/.output/sdk/test 
+    mkdir -p {{justfile_directory()}}/generate/.output/sdk/test/
+    rm -rf {{justfile_directory()}}/generate/.output/sdk/test/*
+    ln -s {{justfile_directory()}}/test_sdk/* {{justfile_directory()}}/generate/.output/sdk/test 
  
 test-local:
     @just generate-local
     @just link-tests
-    cd {{justfile_directory()}}/generate/.output/sdk && poetry install && poetry run pytest
+    cd {{justfile_directory()}}/generate/.output/sdk && poetry install && poetry run pytest test
     
 generate TARGET_DIR:
     @just generate-local

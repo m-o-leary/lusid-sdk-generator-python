@@ -61,11 +61,13 @@ echo "[INFO] generating sdk version: ${PACKAGE_VERSION}"
 
 # generate the SDK
 java ${JAVA_OPTS} -jar /opt/openapi-generator/modules/openapi-generator-cli/target/openapi-generator-cli.jar generate \
+    --global-property modelTests=false,apiTests=false \
     -i $sdk_output_folder/swagger.json \
     -g python \
     -o $sdk_output_folder \
     -t $gen_root/templates \
-    -c $config_file    # enable the following if a manual override is required
+    -c $config_file # enable the following if a manual override is required 
+    
     # --skip-validate-spec
 
 
@@ -83,7 +85,7 @@ mkdir -p $output_folder/.github/
 cp -R /tmp/workflows/github/* $output_folder/.github/
 touch $sdk_output_folder/$app_name/py.typed
 
-model_files=$(find $sdk_output_folder/$app_name/models/*)
+model_files=$(find $sdk_output_folder/$app_name/models -type f -maxdepth 1 )
 for file in $model_files
 do
     new_contents=$(sed 's/&\\\\\"/\&\\"/' $file | sed '/from lusid\.models\.dict\[str,_result_value\] import Dict\[str, ResultValue\]/d')

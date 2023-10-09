@@ -3,10 +3,9 @@ from {{packageName}}.extensions.configuration_loaders import (
     ConfigurationLoader,
     default_config_loaders,
 )
-from {{packageName}}.extensions.proxy_config import ProxyConfig
-from {{packageName}}.extensions.api_configuration import ApiConfiguration
-import logging
 from {{packageName}}.extensions.api_client_builder import build_client
+from {{packageName}}.extensions.configuration_loaders import get_api_configuration
+import logging
 from typing import TypeVar, Type, Iterable
 
 logger = logging.getLogger(__name__)
@@ -14,50 +13,21 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
-def get_api_configuration(config_loaders: Iterable[ConfigurationLoader]) -> ApiConfiguration:
-    config = {}
-
-    for config_loader in config_loaders:
-        loaded_config = {
-            key: value
-            for key, value in config_loader.load_config().items()
-            if value is not None
-        }
-        config.update(loaded_config)
-    proxy_address = config.pop("proxy_address", None)
-    proxy_username = config.pop("proxy_username", None)
-    proxy_password = config.pop("proxy_password", None)
-    # If the proxy address is missing ensure that no proxy is used in the ApiConfiguration
-    if all(
-        (item is not None for item in (proxy_address, proxy_password, proxy_username))
-    ):
-        config["proxy_config"] = ProxyConfig(
-            address=proxy_address, username=proxy_username, password=proxy_password
-        )
-    else:
-        config["proxy_config"] = None
-    # Create and return the ApiConfiguration
-    return ApiConfiguration(**config)
-
-
 class ApiClientFactory:
     def __init__(
         self,
         config_loaders: Iterable[ConfigurationLoader] = default_config_loaders,
-        api_client_builder=build_client,
         id_provider_response_handler=None,
         tcp_keep_alive=None,
-        certificate_filename=None,
         correlation_id=None,
         app_name=None
     ):
         api_config = get_api_configuration(config_loaders=config_loaders)
-        self.__api_client = api_client_builder(
+        self.__api_client = build_client(
             api_config,
             build_async_client=False,
             id_provider_response_handler=id_provider_response_handler,
             tcp_keep_alive=tcp_keep_alive,
-            certificate_filename=certificate_filename,
             correlation_id=correlation_id,
             app_name=app_name
         )
@@ -69,7 +39,7 @@ class ApiClientFactory:
     def __exit__(self, exc_type, exc_value, traceback):
         self.__api_client.__exit__(exc_type, exc_value, traceback)
 
-    def get_api_instance(
+    def build(
         self,
         metaclass: Type[T],
     ) -> T:
@@ -80,20 +50,17 @@ class AsyncApiClientFactory:
     def __init__(
         self,
         config_loaders: Iterable[ConfigurationLoader] = default_config_loaders,
-        api_client_builder=build_client,
         id_provider_response_handler=None,
         tcp_keep_alive=None,
-        certificate_filename=None,
         correlation_id=None,
         app_name=None
     ):
         api_config = get_api_configuration(config_loaders=config_loaders)
-        self.__api_client = api_client_builder(
+        self.__api_client = build_client(
             api_config,
             build_async_client=True,
             id_provider_response_handler=id_provider_response_handler,
             tcp_keep_alive=tcp_keep_alive,
-            certificate_filename=certificate_filename,
             correlation_id=correlation_id,
             app_name=app_name
         )
@@ -105,7 +72,7 @@ class AsyncApiClientFactory:
     async def __aexit__(self, exc_type, exc_value, traceback):
         await self.__api_client.__aexit__(exc_type, exc_value, traceback)
 
-    def get_api_instance(
+    def build(
         self,
         metaclass: Type[T],
     ) -> T:
