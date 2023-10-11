@@ -49,6 +49,7 @@ class TestASyncRetryRestWrapper():
         result = await retry_object.request("GET", "")
         assert result == "OK"
         rest_object_mock.request.assert_called_once_with('GET', '', None, None, None, None, True, None)
+        await rest_object_mock.close()
 
     async def test_on_failure_retries_once(self):
         rest_object_mock = AsyncRestClientObject(Configuration())
@@ -60,6 +61,7 @@ class TestASyncRetryRestWrapper():
         assert result == "OK"
         rest_object_mock.request.assert_called_with('GET', '', None, None, None, None, True, None)
         assert rest_object_mock.request.call_count == 2
+        await rest_object_mock.close()
 
     async def test_on_repeated_failures_throws_ApiException(self):
         rest_object_mock = AsyncRestClientObject(Configuration())
@@ -72,3 +74,4 @@ class TestASyncRetryRestWrapper():
             result = await retry_object.request("GET", "")
             assert result == "OK"
             assert rest_object_mock.request.call_count == 2
+        await rest_object_mock.close()

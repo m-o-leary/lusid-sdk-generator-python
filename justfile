@@ -49,7 +49,30 @@ test-local:
     @just generate-local
     @just link-tests
     cd {{justfile_directory()}}/generate/.output/sdk && poetry install && poetry run pytest test
-    
+
+test-cicd:
+    @just generate-local
+    @just link-tests
+    cd {{justfile_directory()}}/generate/.output/sdk && poetry install && poetry run pytest test
+
+test-only:
+    mkdir -p {{justfile_directory()}}/generate/.output/sdk/test/
+    cp -r {{justfile_directory()}}/test_sdk/* {{justfile_directory()}}/generate/.output/sdk/test 
+
+    docker run \
+        -t \
+        -e FBN_TOKEN_URL=${FBN_TOKEN_URL} \
+        -e FBN_USERNAME=${FBN_USERNAME} \
+        -e FBN_PASSWORD=${FBN_PASSWORD} \
+        -e FBN_CLIENT_ID=${FBN_CLIENT_ID} \
+        -e FBN_CLIENT_SECRET=${FBN_CLIENT_SECRET} \
+        -e FBN_LUSID_API_URL=${FBN_LUSID_API_URL} \
+        -e FBN_APP_NAME=${FBN_APP_NAME} \
+        -e FBN_ACCESS_TOKEN=${FBN_ACCESS_TOKEN} \
+        -v {{justfile_directory()}}/generate/.output/sdk:/usr/src/sdk/ \
+        -w /usr/src/sdk \
+        python:3.11 bash -c "pip install poetry; poetry install; poetry run pytest"
+
 generate TARGET_DIR:
     @just generate-local
     
