@@ -22,6 +22,7 @@ from {{packageName}}.api_response import ApiResponse
 import {{modelPackage}}
 from {{packageName}}.extensions import rest
 from {{packageName}}.exceptions import ApiValueError, ApiException
+from importlib.metadata import version
 
 
 class SyncApiClient:
@@ -66,7 +67,7 @@ class SyncApiClient:
         self.rest_client = rest.RESTClientObject(configuration)
         self.default_headers = {
             "X-LUSID-SDK-Language": "Python",
-            "X-LUSID-SDK-Version": "{{packageVersion}}"
+            "X-LUSID-SDK-Version":  version("{{packageName}}-sdk")
         }
         if header_name is not None:
             self.default_headers[header_name] = header_value
