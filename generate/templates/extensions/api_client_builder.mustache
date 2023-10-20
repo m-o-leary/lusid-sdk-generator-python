@@ -51,6 +51,36 @@ def build_client(
     correlation_id: Optional[str] = None,
     app_name: Optional[str] = None,
 ) -> Union[AsyncApiClient, SyncApiClient]:
+    """Build an ApiClient that can be used to connect to LUSID.
+
+    Parameters
+    ----------
+    api_config : ApiConfiguration
+        configuration for the ApiClient, including auth.
+    build_async_client : bool, optional
+        Should a synchronous or async client be built, by default False
+    id_provider_response_handler : Callable, optional
+        A function that can be used to handle responses from identity providers, by default None
+    tcp_keep_alive : bool, optional
+        Set tcp_keep_alive options on client connections, by default False
+    socket_options : Optional[ Union[Tuple[Any, Any, Any], Tuple[Any, Any, None, int]] ], optional
+        Custom socket options for client connections, by default None
+    correlation_id : Optional[str], optional
+        Sets an additional header on the client which 
+        tags each request with a correlation id, by default None
+    app_name : Optional[str], optional
+        Name of the application, by default None
+
+    Returns
+    -------
+    Union[AsyncApiClient, SyncApiClient]
+        Either a synchronous or asynchronous ApiClient
+
+    Raises
+    ------
+    ValueError
+        Raised if necessary configuration not provided in ApiConfiguration object
+    """
     try:
         if api_config.api_url is None:
             logger.error("Api Url must have a value")
