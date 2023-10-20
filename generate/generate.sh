@@ -97,7 +97,6 @@ done
 
 (
     cd $sdk_output_folder;
-    poetry add --group dev lusidfeature;
-    poetry install -v;
+    poetry install;
     # poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics;
 )
