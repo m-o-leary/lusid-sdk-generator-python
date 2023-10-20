@@ -1,5 +1,5 @@
-from {{packageName}}.extensions.api_client_builder import get_access_token, build_client
-from {{packageName}}.extensions.api_client_factory import ApiClientFactory, AsyncApiClientFactory
+from {{packageName}}.extensions.api_client_builder import build_client
+from {{packageName}}.extensions.api_client_factory import SyncApiClientFactory, ApiClientFactory
 from {{packageName}}.extensions.configuration_loaders import (
     ConfigurationLoader,
     SecretsFileConfigurationLoader,
@@ -11,6 +11,5 @@ from {{packageName}}.extensions.api_configuration import ApiConfiguration
 from {{packageName}}.extensions.retry import RetryingRestWrapper, RetryingRestWrapperAsync
 from {{packageName}}.extensions.proxy_config import ProxyConfig
 from {{packageName}}.extensions.refreshing_token import RefreshingToken
-from {{packageName}}.extensions.api_client import ApiClient
+from {{packageName}}.extensions.api_client import SyncApiClient
 from {{packageName}}.extensions.rest import RESTClientObject
-from {{packageName}}.extensions.config_exceptions import MissingConfigError

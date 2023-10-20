@@ -44,8 +44,11 @@
         "extensions/rest.mustache": {
             "destinationFilename": "${PACKAGE_NAME}/extensions/rest.py"
         },
-        "extensions/config_exceptions.mustache": {
-            "destinationFilename": "${PACKAGE_NAME}/extensions/config_exceptions.py"
+        "extensions/socket_keep_alive.mustache": {
+            "destinationFilename": "${PACKAGE_NAME}/extensions/socket_keep_alive.py"
+        },
+        "extensions/tcp_keep_alive_connector.mustache": {
+            "destinationFilename": "${PACKAGE_NAME}/extensions/tcp_keep_alive_connector.py"
         }
     }
 }
