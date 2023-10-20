@@ -7,5 +7,8 @@
 !.gitignore
 !.github
 
+
 # ignore any swagger.json file that ends up in here
 swagger.json
+
+**/*.pyc
