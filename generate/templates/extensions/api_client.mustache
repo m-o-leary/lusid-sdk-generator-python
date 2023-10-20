@@ -65,6 +65,7 @@ class SyncApiClient:
         self.pool_threads = pool_threads
 
         self.rest_client = rest.RESTClientObject(configuration)
+        package_version = version("{{packageName}}-sdk")
         self.default_headers = {
             "X-LUSID-SDK-Language": "Python",
             "X-LUSID-SDK-Version":  version("{{packageName}}-sdk")
@@ -73,7 +74,7 @@ class SyncApiClient:
             self.default_headers[header_name] = header_value
         self.cookie = cookie
         # Set default User-Agent.
-        self.user_agent = '{{{httpUserAgent}}}{{^httpUserAgent}}OpenAPI-Generator/{{{packageVersion}}}/python{{/httpUserAgent}}'
+        self.user_agent = f'{{{httpUserAgent}}}{{^httpUserAgent}}OpenAPI-Generator/{package_version}/python{{/httpUserAgent}}'
         self.client_side_validation = configuration.client_side_validation
 
 
