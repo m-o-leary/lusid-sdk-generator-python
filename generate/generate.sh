@@ -84,10 +84,13 @@ cp -R /tmp/docs/docs/* $output_folder/docs
 mkdir -p $output_folder/.github/
 cp -R /tmp/workflows/github/* $output_folder/.github/
 touch $sdk_output_folder/$app_name/py.typed
-
+# list all model files
 model_files=$(find $sdk_output_folder/$app_name/models -type f -maxdepth 1 )
 for file in $model_files
 do
+    # fixes two bugs in generated code (can't be done in template)
+    # backslashes are incorrectly escaped in regex paths - which causes an odd number of backslashes when they should be even
+    # dict type is imported as a model (isMap is not set)
     new_contents=$(sed 's/&\\\\\"/\&\\"/' $file | sed '/from lusid\.models\.dict\[str,_result_value\] import Dict\[str, ResultValue\]/d')
     echo "$new_contents" > $file
 done
