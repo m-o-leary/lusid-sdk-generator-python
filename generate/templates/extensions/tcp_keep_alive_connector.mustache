@@ -5,6 +5,10 @@ from typing import List, Tuple, Any, Union, Optional
 
 
 class TcpKeepAliveConnector(aiohttp.TCPConnector):
+    """Replacement for aiohttp.TCPConnector
+    which sets socket options on each connection.
+    So we can use tcp keep alives which aiohttp has limited support for.
+    """
     def __init__(
         self,
         *,

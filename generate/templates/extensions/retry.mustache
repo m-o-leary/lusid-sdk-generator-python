@@ -6,6 +6,10 @@ import asyncio
 
 
 class RetryingRestWrapper:
+    """Wrapper for HTTP requests
+    Which retries on failure
+    And waits the amount of time specified in the Retry After header.
+    """
     def __init__(self, rest_object, retries: int = 3):
         if not isinstance(retries, int):
             raise ValueError(f"retries should be an int, found {type(self.retries)}")
@@ -177,6 +181,10 @@ class RetryingRestWrapper:
 
 
 class RetryingRestWrapperAsync:
+    """Wrapper for HTTP requests
+    Which retries on failure
+    And waits the amount of time specified in the Retry After header.
+    """
     def __init__(self, rest_object, retries: int = 3):
         if not isinstance(retries, int):
             raise ValueError(f"retries should be an int, found {type(self.retries)}")
