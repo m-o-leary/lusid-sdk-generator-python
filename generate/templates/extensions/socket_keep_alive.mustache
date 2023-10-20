@@ -7,6 +7,14 @@ __logger__ = logging.getLogger(__name__)
 
 
 def keep_alive_socket_options() -> Sequence:
+    """Returns default socket options for all platforms for
+    setting keep alives on tcp connections.
+
+    Returns
+    -------
+    Sequence
+        Set of socket options.
+    """
     # The content to send on Mac OS in the TCP Keep Alive probe
     TCP_KEEPALIVE = 0x10
     # The maximum time to keep the connection idle before sending probes

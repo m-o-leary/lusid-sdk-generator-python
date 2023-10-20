@@ -49,13 +49,29 @@ class ConfigurationLoader(Protocol):
 
 
 class SecretsFileConfigurationLoader:
+    """Configuration Loader for reading secrets from a json secrets file
+    """
     def __init__(
         self,
         api_secrets_file: Union[TextIO, str]
     ):
+        """Create SecretsFileConfigurationLoader
+
+        Parameters
+        ----------
+        api_secrets_file : Union[TextIO, str]
+            File to load secrets from
+        """
         self._api_secrets_file = api_secrets_file or ""
 
     def load_config(self) -> Dict[str, str]:
+        """reads config from the provided secrets file
+
+        Returns
+        -------
+        Dict[str, str]
+            dictionary that can be loaded into an ApiConfiguration object
+        """
         # The secrets file is a nested dictionary, set the names of the top level keys
         logger.debug(f"loading config from secrets file: {self._api_secrets_file}")
         api_config_key = "api"
@@ -93,7 +109,16 @@ class SecretsFileConfigurationLoader:
 
 
 class EnvironmentVariablesConfigurationLoader:
+    """ConfigurationLoader which reads config from environment variables
+    """    
     def load_config(self) -> Dict[str, str]:
+        """reads config from environment variables
+
+        Returns
+        -------
+        Dict[str, str]
+            dictionary that can be loaded into an ApiConfiguration object
+        """
         logger.debug("loading config from environment variables")
 
         populated_api_config_values = {
@@ -114,10 +139,21 @@ class EnvironmentVariablesConfigurationLoader:
 
 
 class ArgsConfigurationLoader:
+    """ConfigurationLoader which loads in config from kwargs in constructor
+    """
     def __init__(self, **kwargs):
+        """kwargs passed to this constructor used to build ApiConfiguration
+        """
         self._kwargs = kwargs
 
     def load_config(self) -> Dict[str, str]:
+        """load configuration from kwargs passed to constructor
+
+        Returns
+        -------
+        Dict[str, str]
+            dictionary that can be loaded into an ApiConfiguration object
+        """
         logger.debug("loading config from arguments passed to ArgsConfigurationLoader")
         keys = ENVIRONMENT_CONFIG_KEYS.keys()
         return {key: self._kwargs.get(key) for key in keys}
@@ -129,6 +165,19 @@ default_config_loaders = (
 )
 
 def get_api_configuration(config_loaders: Iterable[ConfigurationLoader]) -> ApiConfiguration:
+    """Read configuration from config loaders.
+    Update config with values from each loader in order (last write wins).
+
+    Parameters
+    ----------
+    config_loaders : Iterable[ConfigurationLoader]
+        Objects that can be used to fetch config with a load_config function returning a dict.
+
+    Returns
+    -------
+    ApiConfiguration
+        Configuration that can be passed to an ApiClient, RefreshingToken, etc.
+    """
     config = {}
 
     for config_loader in config_loaders:

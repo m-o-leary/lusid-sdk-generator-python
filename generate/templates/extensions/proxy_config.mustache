@@ -1,4 +1,5 @@
 from urllib3 import make_headers
+from typing import Any
 
 
 class ProxyConfig:
@@ -55,7 +56,14 @@ class ProxyConfig:
         return {"http": proxy_url, "https": proxy_url}
 
     @property
-    def headers(self):
+    def headers(self) -> Any:
+        """Return Proxy auth headers
+
+        Returns
+        -------
+        Any
+            Proxy auth headers
+        """
         return make_headers(
             proxy_basic_auth=f"{self.__username}:{self.__password}"
         )
