@@ -321,7 +321,7 @@ class TestRefreshingToken:
             assert f"{refreshing_token}" == "mock_access_token"
             elapsed = time() - start
             # Ensure that the elapsed time is as expected
-            assert int(elapsed) == expected_delay
+            assert round(elapsed) == expected_delay
 
     @pytest.mark.parametrize(
         "_, seconds_delay",

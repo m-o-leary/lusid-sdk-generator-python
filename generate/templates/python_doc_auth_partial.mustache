@@ -1,15 +1,15 @@
 from {{packageName}} import (
-	  AsyncApiClientFactory,
+	  ApiClientFactory,
 	  ApplicationMetadataApi,
 	  EnvironmentVariablesConfigurationLoader,
 	  SecretsFileConfigurationLoader,
 	  ArgsConfigurationLoader
 )
 
-# Use the {{packageName}} AsyncApiClientFactory to build Api instances with a configured api client
+# Use the {{packageName}} ApiClientFactory to build Api instances with a configured api client
 # By default this will read config from environment variables
 # Then from a secrets.json file found in the current working directory
-api_client_factory = AsyncApiClientFactory()
+api_client_factory = ApiClientFactory()
 
 # The ApiClientFactory can be passed an iterable of configuration loaders to read configuration from
 
@@ -25,7 +25,7 @@ config_loaders = [
 	SecretsFileConfigurationLoader(api_secrets_file=secrets_path),
 	ArgsConfigurationLoader(api_url=api_url, app_name=app_name)
 ]
-api_client_factory = AsyncApiClientFactory(config_loaders=config_loaders)
+api_client_factory = ApiClientFactory(config_loaders=config_loaders)
 
 
 {{#hasAuthMethods}}
