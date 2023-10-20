@@ -4,12 +4,15 @@
     "packageVersion": "${PACKAGE_VERSION}",
     "generateSourceCodeOnly": "generateSourceCodeOnly",
     "library": "asyncio",
-    "disallowAdditionalPropertiesIfNotPresent": "false",
+    "disallowAdditionalPropertiesIfNotPresent": false,
     "licenseInfo": "MIT",
     "datetimeFormat": "%Y-%m-%dT%H:%M:%S.%fZ",
     "isLusidPackage": true,
     "gitUserId": "${GIT_USER_ID}",
     "gitRepoId": "${GIT_REPO_ID}",
+    "additionalProperties": {
+        "identifierNamingConvention": "snake_case"
+    },
     "files": {
         "extensions/api_client_builder.mustache": {
             "destinationFilename": "${PACKAGE_NAME}/extensions/api_client_builder.py"
@@ -17,17 +20,11 @@
         "extensions/api_client_factory.mustache": {
             "destinationFilename": "${PACKAGE_NAME}/extensions/api_client_factory.py"
         },
-        "extensions/api_configuration_loader.mustache": {
-            "destinationFilename": "${PACKAGE_NAME}/extensions/api_configuration_loader.py"
+        "extensions/configuration_loaders.mustache": {
+            "destinationFilename": "${PACKAGE_NAME}/extensions/configuration_loaders.py"
         },
         "extensions/api_configuration.mustache": {
             "destinationFilename": "${PACKAGE_NAME}/extensions/api_configuration.py"
-        },
-        "extensions/config_keys_json.mustache": {
-            "destinationFilename": "${PACKAGE_NAME}/extensions/config_keys.json"
-        },
-        "extensions/config_keys_py.mustache": {
-            "destinationFilename": "${PACKAGE_NAME}/extensions/config_keys.py"
         },
         "extensions/retry.mustache": {
             "destinationFilename": "${PACKAGE_NAME}/extensions/retry.py"
@@ -40,6 +37,18 @@
         },
         "extensions/__init__.mustache": {
             "destinationFilename": "${PACKAGE_NAME}/extensions/__init__.py"
+        },
+        "extensions/api_client.mustache": {
+            "destinationFilename": "${PACKAGE_NAME}/extensions/api_client.py"
+        },
+        "extensions/rest.mustache": {
+            "destinationFilename": "${PACKAGE_NAME}/extensions/rest.py"
+        },
+        "extensions/socket_keep_alive.mustache": {
+            "destinationFilename": "${PACKAGE_NAME}/extensions/socket_keep_alive.py"
+        },
+        "extensions/tcp_keep_alive_connector.mustache": {
+            "destinationFilename": "${PACKAGE_NAME}/extensions/tcp_keep_alive_connector.py"
         }
     }
 }

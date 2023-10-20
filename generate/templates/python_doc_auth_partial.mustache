@@ -1,9 +1,32 @@
+from {{packageName}} import (
+	  ApiClientFactory,
+	  ApplicationMetadataApi,
+	  EnvironmentVariablesConfigurationLoader,
+	  SecretsFileConfigurationLoader,
+	  ArgsConfigurationLoader
+)
+
+# Use the {{packageName}} ApiClientFactory to build Api instances with a configured api client
+# By default this will read config from environment variables
+# Then from a secrets.json file found in the current working directory
+api_client_factory = ApiClientFactory()
+
+# The ApiClientFactory can be passed an iterable of configuration loaders to read configuration from
+
 api_url = "{{{basePath}}}"
 # Path to a secrets.json file containing authentication credentials
 # See https://support.lusid.com/knowledgebase/article/KA-01667/en-us
 # for a detailed guide to setting up the SDK make authenticated calls to LUSID APIs
 secrets_path = os.getenv("FBN_SECRETS_PATH")
 app_name="LusidJupyterNotebook"
+
+config_loaders = [
+	EnvironmentVariablesConfigurationLoader(),
+	SecretsFileConfigurationLoader(api_secrets_file=secrets_path),
+	ArgsConfigurationLoader(api_url=api_url, app_name=app_name)
+]
+api_client_factory = ApiClientFactory(config_loaders=config_loaders)
+
 
 {{#hasAuthMethods}}
 # The client must configure the authentication and authorization parameters
@@ -101,7 +124,6 @@ configuration.api_key['{{{name}}}'] = os.environ["API_KEY"]
 {{/isApiKey}}
 {{#isOAuth}}
 
-access_token = os.getenv("ACCESS_TOKEN")
 {{/isOAuth}}
 {{/authMethods}}
 {{/hasAuthMethods}}

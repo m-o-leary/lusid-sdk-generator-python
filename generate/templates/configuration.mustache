@@ -9,9 +9,9 @@ import multiprocessing
 {{/asyncio}}
 import sys
 import urllib3
+from importlib.metadata import version
 
 import http.client as httplib
-from {{packageName}}.exceptions import ApiValueError
 
 JSON_SCHEMA_VALIDATION_KEYWORDS = {
     'multipleOf', 'maximum', 'exclusiveMaximum',
@@ -19,7 +19,7 @@ JSON_SCHEMA_VALIDATION_KEYWORDS = {
     'minLength', 'pattern', 'maxItems', 'minItems'
 }
 
-class Configuration(object):
+class Configuration:
     """This class contains various settings of the API client.
 
     :param host: Base url.
@@ -45,7 +45,8 @@ class Configuration(object):
       configuration.
     :param server_operation_variables: Mapping from operation ID to a mapping with
       string values to replace variables in templated server configuration.
-      The validation of enums is performed for variables with defined enum values before.
+      The validation of enums is performed for variables with defined enum
+      values before.
     :param ssl_ca_cert: str - the path to a file of concatenated CA certificates
       in PEM format.
 
@@ -146,8 +147,7 @@ conf = {{{packageName}}}.Configuration(
                  server_index=None, server_variables=None,
                  server_operation_index=None, server_operation_variables=None,
                  ssl_ca_cert=None,
-                 tcp_keep_alive=False,
-                 ):
+                 ) -> None:
         """Constructor
         """
         self._base_path = "{{{basePath}}}" if host is None else host
@@ -194,18 +194,6 @@ conf = {{{packageName}}}.Configuration(
         """The HTTP signing configuration
         """
 {{/hasHttpSignatureMethods}}
-{{#hasOAuthMethods}}
-        self.access_token = None
-        """access token for OAuth/Bearer
-        """
-{{/hasOAuthMethods}}
-{{^hasOAuthMethods}}
-{{#hasHttpBearerMethods}}
-        self.access_token = None
-        """access token for OAuth/Bearer
-        """
-{{/hasHttpBearerMethods}}
-{{/hasOAuthMethods}}
         self.logger = {}
         """Logging Settings
         """
@@ -244,6 +232,10 @@ conf = {{{packageName}}}.Configuration(
         self.assert_hostname = None
         """Set this to True/False to enable/disable SSL hostname verification.
         """
+        self.tls_server_name = None
+        """SSL/TLS Server Name Indication (SNI)
+           Set this to the SNI value expected by the server.
+        """
 
         {{#asyncio}}
         self.connection_pool_maxsize = 100
@@ -276,13 +268,7 @@ conf = {{{packageName}}}.Configuration(
         # Enable client side validation
         self.client_side_validation = True
 
-        # Set TCP Keep alive; this will keep connections open on longer running requests.
-        if tcp_keep_alive == True:
-            self.socket_options = HTTPConnection.default_socket_options + [
-                (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
-            ]
-        else:
-            self.socket_options = None
+        self.socket_options = None
         """Options to pass down to the underlying urllib3 socket
         """
 
@@ -537,12 +523,13 @@ conf = {{{packageName}}}.Configuration(
 
         :return: The report for debugging.
         """
+        package_version = version("{{packageName}}-sdk")
         return "Python SDK Debug Report:\n"\
                "OS: {env}\n"\
                "Python Version: {pyversion}\n"\
                "Version of the API: {{version}}\n"\
-               "SDK Package Version: {{packageVersion}}".\
-               format(env=sys.platform, pyversion=sys.version)
+               "SDK Package Version: {package_version}".\
+               format(env=sys.platform, pyversion=sys.version, package_version=package_version)
 
     def get_host_settings(self):
         """Gets an array of host settings

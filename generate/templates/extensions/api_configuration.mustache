@@ -18,7 +18,7 @@ class ApiConfiguration:
         :param str certificate_filename: Name of the certificate file (.pem, .cer or .crt)
         :param {{packageName}}.extensions.ProxyConfig proxy_config: The proxy configuration to use
         """
-        self.token_url = token_url
+        self.__token_url = token_url
         self.__api_url = api_url
         self.__username = username
         self.__password = password
@@ -44,9 +44,9 @@ class ApiConfiguration:
             """
             if (url is not None and
                     # and it's an Okta oauth2 URL
-                    re.search('^http(s)?:\/\/.*\.okta\.com\/oauth2\/.+', url, flags=re.IGNORECASE) is not None and
+                    re.search(r'^http(s)?:\/\/.*\.okta\.com\/oauth2\/.+', url, flags=re.IGNORECASE) is not None and
                     # and it's missing the token suffix
-                    re.search('\/v\d+\/token$', url, flags=re.IGNORECASE) is None):
+                    re.search(r'\/v\d+\/token$', url, flags=re.IGNORECASE) is None):
                 return url.rstrip('/') + '/v1/token'
             return url
 

@@ -1,148 +1,138 @@
+from {{packageName}}.extensions.api_configuration import ApiConfiguration
+import logging
+import aiohttp
+from typing import Union, Any, Optional, Tuple, Callable
+from {{packageName}}.api_client import ApiClient as AsyncApiClient
+from {{packageName}}.extensions.api_client import SyncApiClient
+from {{packageName}}.extensions.refreshing_token import RefreshingToken
+from {{packageName}}.configuration import Configuration
+import {{packageName}}.extensions.retry as retry
+from {{packageName}}.extensions.socket_keep_alive import keep_alive_socket_options
+from {{packageName}}.extensions.tcp_keep_alive_connector import TcpKeepAliveConnector
 import os
 
-from urllib3 import make_headers
-
-from {{packageName}}.configuration import Configuration
-from {{packageName}}.api_client import ApiClient
-from {{packageName}}.extensions.retry import RetryingRESTClientObject
-from {{packageName}}.extensions.api_configuration_loader import ApiConfigurationLoader
-from {{packageName}}.extensions.refreshing_token import RefreshingToken
+logger = logging.getLogger(__name__)
 
 
-class ApiClientBuilder:
+def _get_access_token(
+    api_config: ApiConfiguration, id_provider_response_handler=None
+):
+    try:
+        if api_config.access_token is not None:
+            return api_config.access_token
+        logger.debug(
+            "Access token not provided, \
+                will attempt to set up client using OIDC parameters"
+        )
+        return RefreshingToken(
+            api_configuration=api_config,
+            id_provider_response_handler=id_provider_response_handler,
+        )
+    except AttributeError:
+        logger.exception(
+            "Could not retrieve access token - ensure api_config is an ApiConfiguration object"
+        )
+        raise
+    except ValueError:
+        logger.exception(
+            "Could not retrieve access token - ensure fields required to authenticate are set"
+        )
+        raise
+
+
+def build_client(
+    api_config: ApiConfiguration,
+    build_async_client: bool = False,
+    id_provider_response_handler: Callable = None,
+    tcp_keep_alive: bool = False,
+    socket_options: Optional[
+        Union[Tuple[Any, Any, Any], Tuple[Any, Any, None, int]]
+    ] = None,
+    correlation_id: Optional[str] = None,
+    app_name: Optional[str] = None,
+) -> Union[AsyncApiClient, SyncApiClient]:
+    """Build an ApiClient that can be used to connect to LUSID.
+
+    Parameters
+    ----------
+    api_config : ApiConfiguration
+        configuration for the ApiClient, including auth.
+    build_async_client : bool, optional
+        Should a synchronous or async client be built, by default False
+    id_provider_response_handler : Callable, optional
+        A function that can be used to handle responses from identity providers, by default None
+    tcp_keep_alive : bool, optional
+        Set tcp_keep_alive options on client connections, by default False
+    socket_options : Optional[ Union[Tuple[Any, Any, Any], Tuple[Any, Any, None, int]] ], optional
+        Custom socket options for client connections, by default None
+    correlation_id : Optional[str], optional
+        Sets an additional header on the client which 
+        tags each request with a correlation id, by default None
+    app_name : Optional[str], optional
+        Name of the application, by default None
+
+    Returns
+    -------
+    Union[AsyncApiClient, SyncApiClient]
+        Either a synchronous or asynchronous ApiClient
+
+    Raises
+    ------
+    ValueError
+        Raised if necessary configuration not provided in ApiConfiguration object
     """
-    The ApiClientBuilder is responsible for building a {{packageName}}.ApiClient. This includes obtaining an access token from
-    Okta or using the provided token.
+    try:
+        if api_config.api_url is None:
+            logger.error("Api Url must have a value")
+            raise ValueError("Api Url must have a value")
+        config = Configuration(
+            access_token=_get_access_token(api_config, id_provider_response_handler),
+            host=api_config.api_url,
+            ssl_ca_cert=api_config.certificate_filename,
+        )
+        if tcp_keep_alive:
+            config.socket_options = socket_options or keep_alive_socket_options()
+        # Set the proxy for {{packageName}} if needed
+        if api_config.proxy_config is not None:
+            config.proxy = api_config.proxy_config.address
+            config.proxy_headers = api_config.proxy_config.headers
+    except (AttributeError, ValueError):
+        logger.exception(
+            "Unable to build api client, required configuration not provided"
+        )
+        raise
 
-    Any validation on the inputs required to build a {{packageName}}.ApiClient is the responsibility of this ApiClientBuilder.
-    """
-
-    @staticmethod
-    def __check_required_fields(object_to_check, fields):
-        """
-        This function checks that the provided fields on an object are populated with values other than None
-
-        :param object_to_check: The object to check the fields (a.k.a attributes) of
-        :param list[str] fields: The fields to check on the object
-
-        :return: None
-        """
-        # Check for fields which have a value of None
-        missing_fields = [field for field in fields if getattr(object_to_check, field) is None]
-
-        # Raise an error if any fields have a value of None
-        if len(missing_fields) > 0:
-            raise ValueError(
-                f"The fields {str(missing_fields)} on the {object_to_check.__class__.__name__} are set to None, "
-                f"please ensure that you have provided them directly, via a secrets file or environment "
-                f"variables")
-
-    @classmethod
-    def resolve_api_token(cls, token=None, configuration=None, id_provider_response_handler=None):
-
-        """
-        Description:
-        This method uses a PAT (Personal Access Token) or secrets to return an API token.
-        The method uses the following conditional logic in order of precedence to resolve an
-        authentication path:
-
-            1. Use PAT passed into the function
-            2. Use secrets files passed into the function
-            3. Use environment variables
-
-        PAT are used in preference to supplied credentials.
-        secrets files are used in preference to environment variables.
-
-        :param str token: The pre-populated access token to use instead of asking Okta for a token
-        :param ApiConfiguration configuration: configuration object containing secrets loaded from env vars
-        :param typing.callable id_provider_response_handler: An optional function to handle the Okta response
-
-        :return: str api_token
-        """
-
-        # If token is passed in by user, then use that token
-        if token is not None:
-            cls.__check_required_fields(configuration, ["api_url"])
-            api_token = token
-
-        # If there is a token provided use it
-        elif configuration.access_token is not None:
-            # Check that there is an api_url available
-            cls.__check_required_fields(configuration, ["api_url"])
-            api_token = configuration.access_token
-
-        # Otherwise generate an access token from Okta and use a RefreshingToken going forward
-        else:
-            # Check that all the required fields for generating a token exist
-            cls.__check_required_fields(configuration, [
-                "api_url",
-                "password",
-                "username",
-                "client_id",
-                "client_secret",
-                "token_url"])
-
-            # Generate an access token
-            api_token = RefreshingToken(
-                api_configuration=configuration,
-                id_provider_response_handler=id_provider_response_handler
-            )
-
-        return api_token
-
-    @classmethod
-    def build(cls, api_secrets_filename=None, id_provider_response_handler=None, api_configuration=None,
-              token=None, correlation_id=None, tcp_keep_alive=False):
-        """
-        :param str api_secrets_filename: The full path to the JSON file containing the API credentials and optional proxy details
-        :param typing.callable id_provider_response_handler: An optional function to handle the Okta response
-        :param {{packageName}}.extensions.ApiConfiguration api_configuration: A pre-populated ApiConfiguration
-        :param str token: The pre-populated access token to use instead of asking Okta for a token
-        :param str correlation_id: Correlation id for all calls made from the returned ApiClient instance, added as a header to each request
-        :param bool tcp_keep_alive: A flag that controls if the API client uses tcp keep-alive probes
-
-        :return: {{packageName}}.ApiClient: The configured LUSID ApiClient
-        """
-
-        # Load the configuration
-        configuration = ApiConfigurationLoader.load(api_secrets_filename)
-
-        # If an api_configuration has been provided override the loaded configuration
-        # with any properties that it has
-        if api_configuration is not None:
-            for key, value in vars(api_configuration).items():
-                if value is not None:
-                    setattr(configuration, key, value)
-
-        api_token = cls.resolve_api_token(token, configuration, id_provider_response_handler)
-
-        # Initialise the API client using the token so that it can be included in all future requests
-        config = Configuration(tcp_keep_alive=tcp_keep_alive)
-        config.access_token = api_token
-        config.host = configuration.api_url
-
-        # Set the certificate from the configuration
-        config.ssl_ca_cert = configuration.certificate_filename
-
-        # Set the proxy for LUSID if needed
-        if configuration.proxy_config is not None:
-            config.proxy = configuration.proxy_config.address
-            if configuration.proxy_config.username is not None and configuration.proxy_config.password is not None:
-                config.proxy_headers = make_headers(
-                    proxy_basic_auth=f"{configuration.proxy_config.username}:{configuration.proxy_config.password}"
-                )
-
+    if build_async_client:
         # Create and return the ApiClient
-        api_client = ApiClient(configuration=config)
-        api_client.rest_client = RetryingRESTClientObject(config)
+        api_client = AsyncApiClient(configuration=config)
+        if tcp_keep_alive:
+            connector = TcpKeepAliveConnector(
+                limit=api_client.rest_client.pool_manager.connector.limit,
+                ssl=api_client.rest_client.pool_manager.connector._ssl,
+                socket_options=config.socket_options,
+            )
+            api_client.rest_client.pool_manager = aiohttp.ClientSession(
+                connector=connector,
+                trust_env=True
+            )
+        rest_client_wrapper = retry.RetryingRestWrapperAsync
 
-        # set the application name if specified
-        if configuration.app_name is not None:
-            api_client.set_default_header("X-LUSID-Application", configuration.app_name)
+    else:
+        # Create and return the ApiClient
+        api_client = SyncApiClient(configuration=config)
+        rest_client_wrapper = retry.RetryingRestWrapper
 
-        # set a correlation id for all requests initiated with this ApiClient
-        corr_id = correlation_id or os.getenv("FBN_CORRELATION_ID")
-        if corr_id is not None:
-            api_client.set_default_header("CorrelationId", corr_id)
+    rc = api_client.rest_client
+    wrapped_rest_client = rest_client_wrapper(rc)
+    api_client.rest_client = wrapped_rest_client
 
-        return api_client
+    # set the application name if specified
+    if app_name is not None:
+        api_client.set_default_header("X-LUSID-Application", app_name)
+
+    # set a correlation id for all requests initiated with this ApiClient
+    corr_id = correlation_id or os.getenv("FBN_CORRELATION_ID")
+    if corr_id is not None:
+        api_client.set_default_header("CorrelationId", corr_id)
+
+    return api_client

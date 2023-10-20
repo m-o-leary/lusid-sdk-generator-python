@@ -43,7 +43,7 @@ app_name=$(cat $config_file | jq -r .packageName)
 #   remove all previously generated files
 shopt -s extglob
 echo "[INFO] removing previous sdk: $sdk_output_folder"
-rm -rf $sdk_output_folder/$app_name/!(utilities|tcp)
+rm -rf $sdk_output_folder
 shopt -u extglob
 
 # ignore files
@@ -61,19 +61,15 @@ echo "[INFO] generating sdk version: ${PACKAGE_VERSION}"
 
 # generate the SDK
 java ${JAVA_OPTS} -jar /opt/openapi-generator/modules/openapi-generator-cli/target/openapi-generator-cli.jar generate \
+    --global-property modelTests=false,apiTests=false \
     -i $sdk_output_folder/swagger.json \
     -g python \
     -o $sdk_output_folder \
     -t $gen_root/templates \
-    -c $config_file
-
-    # enable the following if a manual override is required
+    -c $config_file # enable the following if a manual override is required 
+    
     # --skip-validate-spec
 
-# create a version file
-cat << EOF > $sdk_output_folder/$app_name/__version__.py
-__version__ = "$sdk_version"
-EOF
 
 rm -rf $sdk_output_folder/.openapi-generator/
 rm -rf $sdk_output_folder/test/
@@ -88,3 +84,19 @@ cp -R /tmp/docs/docs/* $output_folder/docs
 mkdir -p $output_folder/.github/
 cp -R /tmp/workflows/github/* $output_folder/.github/
 touch $sdk_output_folder/$app_name/py.typed
+# list all model files
+model_files=$(find $sdk_output_folder/$app_name/models -type f -maxdepth 1 )
+for file in $model_files
+do
+    # fixes two bugs in generated code (can't be done in template)
+    # backslashes are incorrectly escaped in regex paths - which causes an odd number of backslashes when they should be even
+    # dict type is imported as a model (isMap is not set)
+    new_contents=$(sed 's/&\\\\\"/\&\\"/' $file | sed '/from lusid\.models\.dict\[str,_result_value\] import Dict\[str, ResultValue\]/d')
+    echo "$new_contents" > $file
+done
+
+(
+    cd $sdk_output_folder;
+    poetry install;
+    # poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics;
+)
