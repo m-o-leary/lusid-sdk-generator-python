@@ -105,15 +105,16 @@ def build_client(
     if build_async_client:
         # Create and return the ApiClient
         api_client = AsyncApiClient(configuration=config)
-        connector = TcpKeepAliveConnector(
-            limit=api_client.rest_client.pool_manager.connector.limit,
-            ssl=api_client.rest_client.pool_manager.connector._ssl,
-            socket_options=config.socket_options,
-        )
-        api_client.rest_client.pool_manager = aiohttp.ClientSession(
-            connector=connector,
-            trust_env=True
-        )
+        if tcp_keep_alive:
+            connector = TcpKeepAliveConnector(
+                limit=api_client.rest_client.pool_manager.connector.limit,
+                ssl=api_client.rest_client.pool_manager.connector._ssl,
+                socket_options=config.socket_options,
+            )
+            api_client.rest_client.pool_manager = aiohttp.ClientSession(
+                connector=connector,
+                trust_env=True
+            )
         rest_client_wrapper = retry.RetryingRestWrapperAsync
 
     else:
