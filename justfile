@@ -116,8 +116,14 @@ publish-only:
         finbourne/lusid-sdk-gen-python:latest -- bash -ce "cd sdk; poetry publish"
 
 publish-cicd SRC_DIR:
+    #!/usr/bin/env bash
+    set -euxo pipefail
     echo "PACKAGE_VERSION to publish: ${PACKAGE_VERSION}"
-    poetry publish --build --repository ${REPOSITORY_NAME} --directory {{SRC_DIR}}/sdk
+    if [ "${REPOSITORY_NAME}" == "pypi" ]; then
+        poetry publish --build --directory {{SRC_DIR}}/sdk ;
+    else
+        poetry publish --build --repository ${REPOSITORY_NAME} --directory {{SRC_DIR}}/sdk
+    fi
 
 publish-to SRC_DIR OUT_DIR:
     echo "PACKAGE_VERSION to publish: ${PACKAGE_VERSION}"
