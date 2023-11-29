@@ -1,5 +1,6 @@
 from unittest import mock
-from lusid.extensions import RetryingRestWrapper, RetryingRestWrapperAsync, RESTClientObject
+from lusid.extensions.retry import RetryingRestWrapper, RetryingRestWrapperAsync
+from lusid.extensions.rest import RESTClientObject
 from lusid.rest import RESTClientObject as AsyncRestClientObject
 from lusid.configuration import Configuration
 from lusid import ApiException

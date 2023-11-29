@@ -10,7 +10,8 @@ import pytest
 def test_get_application_metadata_sync():
     api_client_factory = SyncApiClientFactory(
         app_name="test_sdk",
-        config_loaders=[EnvironmentVariablesConfigurationLoader()]
+        config_loaders=[EnvironmentVariablesConfigurationLoader()],
+        tcp_keep_alive=False
     )
     with api_client_factory:
         api_instance = api_client_factory.build(ApplicationMetadataApi)

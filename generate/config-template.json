@@ -14,9 +14,6 @@
         "identifierNamingConvention": "snake_case"
     },
     "files": {
-        "extensions/api_client_builder.mustache": {
-            "destinationFilename": "${PACKAGE_NAME}/extensions/api_client_builder.py"
-        },
         "extensions/api_client_factory.mustache": {
             "destinationFilename": "${PACKAGE_NAME}/extensions/api_client_factory.py"
         },

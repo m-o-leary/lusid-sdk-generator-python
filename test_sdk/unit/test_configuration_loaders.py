@@ -3,10 +3,8 @@ from lusid.extensions import (
     SecretsFileConfigurationLoader,
     EnvironmentVariablesConfigurationLoader,
     ArgsConfigurationLoader,
-    get_api_configuration
 )
-from io import StringIO
-import pytest
+from lusid.extensions.api_client_factory import get_api_configuration
 from unittest import mock
 
 
