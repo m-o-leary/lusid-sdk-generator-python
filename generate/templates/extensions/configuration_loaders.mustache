@@ -24,7 +24,7 @@ ENVIRONMENT_CONFIG_KEYS = {
 
 SECRETS_FILE_CONFIG_KEYS = {
     "token_url": "tokenUrl",
-    "api_url": "{{#lambda.camelcase}}{{^isLusidPackage}}{{packageName}}{{/isLusidPackage}}-api-Url{{/lambda.camelcase}}",
+    "api_url": "{{packageName}}Url",
     "username": "username",
     "password": "password",
     "client_id": "clientId",

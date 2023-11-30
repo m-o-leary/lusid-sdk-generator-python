@@ -28,7 +28,7 @@ class TestSecretsFileConfigurationLoader:
         secrets_file_contents = {
             "api": {
                 "tokenUrl": "sample_tokenUrl",
-                "apiUrl": "sample_apiUrl",
+                "lusidUrl": "sample_apiUrl",
                 "username": "sample_username",
                 "password": "sample_password",
                 "clientId": "sample_clientId",
