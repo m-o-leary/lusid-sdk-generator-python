@@ -44,16 +44,20 @@ link-tests:
     mkdir -p {{justfile_directory()}}/generate/.output/sdk/test/
     rm -rf {{justfile_directory()}}/generate/.output/sdk/test/*
     ln -s {{justfile_directory()}}/test_sdk/* {{justfile_directory()}}/generate/.output/sdk/test 
+
+link-tests-cicd TARGET_DIR:
+    mkdir -p {{TARGET_DIR}}/sdk/test/
+    rm -rf {{TARGET_DIR}}/sdk/test/*
+    ln -s {{justfile_directory()}}/test_sdk/* {{TARGET_DIR}}/sdk/test
  
 test-local:
     @just generate-local
     @just link-tests
     cd {{justfile_directory()}}/generate/.output/sdk && poetry install && poetry run pytest test
 
-test-cicd:
-    @just generate-local
-    @just link-tests
-    cd {{justfile_directory()}}/generate/.output/sdk && poetry install && poetry run pytest test
+test-cicd TARGET_DIR:
+    @just link-tests-cicd {{TARGET_DIR}}
+    cd {{TARGET_DIR}}/sdk && poetry install && poetry run pytest test --ignore=test/integration
 
 test-only:
     mkdir -p {{justfile_directory()}}/generate/.output/sdk/test/
