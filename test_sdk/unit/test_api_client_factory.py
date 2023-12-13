@@ -1,4 +1,4 @@
-from aiohttp import ClientSession, TCPConnector
+from aiohttp import ClientSession, TCPConnector, TraceConfig
 from lusid import SyncApiClientFactory, ApiClientFactory
 from lusid.api_client import ApiClient as AsyncApiClient
 from lusid.extensions.api_client import SyncApiClient
@@ -113,10 +113,13 @@ class TestSyncApiClientFactory:
             socket_options=socket_options,
             id_provider_response_handler=None,
         )
-        assert {
-            "http": TCPKeepAliveHTTPConnectionPool,
-            "https": TCPKeepAliveHTTPSConnectionPool,
-        } == instance.api_client.rest_client.rest_object.pool_manager.pool_classes_by_scheme
+        assert (
+            {
+                "http": TCPKeepAliveHTTPConnectionPool,
+                "https": TCPKeepAliveHTTPSConnectionPool,
+            }
+            == instance.api_client.rest_client.rest_object.pool_manager.pool_classes_by_scheme
+        )
 
 
 class TestAsyncApiClientFactory:
@@ -234,3 +237,38 @@ class TestAsyncApiClientFactory:
             connector_mock.return_value
             == api_instance.api_client.rest_client.rest_object.pool_manager.connector
         )
+
+    @pytest.mark.asyncio
+    async def test_build_with_trace_config_builds_api_client_with_trace_configs(
+        self,
+    ):
+        trace_configs = [TraceConfig()]
+        api_client_config_mock = MagicMock(spec=ApiConfiguration)
+        api_client_config_mock.build_api_client_config.return_value = Configuration()
+        with patch(
+            "lusid.extensions.api_client_factory.get_api_configuration"
+        ) as get_api_configuration_mock:
+            get_api_configuration_mock.return_value = api_client_config_mock
+            with patch(
+                "lusid.extensions.api_client_factory.ClientSession"
+            ) as client_session_mock:
+                ApiClientFactory(config_loaders=[], trace_configs=trace_configs)
+        args, kwargs = client_session_mock.call_args
+        assert trace_configs == kwargs["trace_configs"]
+
+    @pytest.mark.asyncio
+    async def test_build_with_client_session_with_trace_config_builds_api_client_with_trace_configs(
+        self,
+    ):
+        api_client_config_mock = MagicMock(spec=ApiConfiguration)
+        api_client_config_mock.build_api_client_config.return_value = Configuration()
+        with patch(
+            "lusid.extensions.api_client_factory.get_api_configuration"
+        ) as get_api_configuration_mock:
+            get_api_configuration_mock.return_value = api_client_config_mock
+            with patch(
+                "lusid.extensions.api_client_factory.ClientSession"
+            ) as client_session_mock:
+                ApiClientFactory(config_loaders=[], client_session=client_session_mock)
+        args, kwargs = client_session_mock.call_args
+        assert client_session_mock.trace_configs == kwargs["trace_configs"]
