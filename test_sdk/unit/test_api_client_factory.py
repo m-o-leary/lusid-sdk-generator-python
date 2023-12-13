@@ -1,5 +1,4 @@
-from aiohttp import ClientSession, TCPConnector
-import aiohttp
+from aiohttp import ClientSession, TCPConnector, TraceConfig
 from lusid import SyncApiClientFactory, ApiClientFactory
 from lusid.api_client import ApiClient as AsyncApiClient
 from lusid.extensions.api_client import SyncApiClient
@@ -243,7 +242,7 @@ class TestAsyncApiClientFactory:
     async def test_build_with_trace_config_builds_api_client_with_trace_configs(
         self,
     ):
-        trace_configs = [aiohttp.TraceConfig()]
+        trace_configs = [TraceConfig()]
         api_client_config_mock = MagicMock(spec=ApiConfiguration)
         api_client_config_mock.build_api_client_config.return_value = Configuration()
         with patch(
