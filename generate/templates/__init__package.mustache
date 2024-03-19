@@ -21,4 +21,32 @@ from {{packageName}}.exceptions import ApiException
 {{#models}}{{#model}}from {{modelPackage}}.{{classFilename}} import {{classname}}
 {{/model}}{{/models}}
 # import extensions into sdk package
-from {{packageName}}.extensions import *
+from {{packageName}}.extensions import (
+    SyncApiClientFactory,
+    ApiClientFactory,
+    ConfigurationLoader,
+    SecretsFileConfigurationLoader,
+    EnvironmentVariablesConfigurationLoader,
+    ArgsConfigurationLoader,
+    SyncApiClient
+)
+
+
+__all__ = [
+    {{#apiInfo}}{{#apis}}"{{classname}}",
+    {{/apis}}{{/apiInfo}}{{#models}}{{#model}}"{{classname}}",
+    {{/model}}{{/models}}"ApiClient",
+    "Configuration",
+    "OpenApiException",
+    "ApiTypeError",
+    "ApiValueError",
+    "ApiKeyError",
+    "ApiException",
+    "SyncApiClientFactory", 
+    "ApiClientFactory",
+    "ConfigurationLoader",
+    "SecretsFileConfigurationLoader",
+    "EnvironmentVariablesConfigurationLoader",
+    "ArgsConfigurationLoader",
+    "SyncApiClient"
+]
