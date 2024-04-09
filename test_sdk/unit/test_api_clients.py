@@ -31,7 +31,6 @@ async def test_async_api_client_encodes_query_params_correctly():
         print(args)
         assert expected_encoded_url == args[1]
 
-
 def test_sync_api_client_encodes_query_params_correctly():
     config = Configuration(host="https://example.com")
     api_client = SyncApiClient(config)
