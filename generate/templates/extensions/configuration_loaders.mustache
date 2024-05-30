@@ -210,7 +210,7 @@ class FileTokenConfigurationLoader:
         if access_token_location is not None and access_token_location != "":
             self.access_token = FileAccessToken(access_token_location)
 
-    def load_config(self) -> Dict[str, FileAccessToken | None]:
+    def load_config(self) -> Dict[str, Union[FileAccessToken, None]]:
         """load access token from file
 
         Returns
