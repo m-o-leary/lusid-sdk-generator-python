@@ -1,4 +1,4 @@
-![LUSID_by_Finbourne](https://content.finbourne.com/LUSID_repo.png)
+![LUSID_by_Finbourne](./resources/Finbourne_Logo_Teal.svg)
 
 This repository contains the generation and publishing logic for each of the LUSID SDKs currently there are SDKs for:
 - Python
