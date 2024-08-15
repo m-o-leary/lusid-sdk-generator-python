@@ -1,5 +1,6 @@
 from aiohttp import ClientSession, TCPConnector, TraceConfig
-from TO_BE_REPLACED import SyncApiClientFactory, ApiClientFactory
+from TO_BE_REPLACED import SyncApiClientFactory, ApiClientFactory, FileTokenConfigurationLoader
+from TO_BE_REPLACED.api_response import ApiResponse
 from TO_BE_REPLACED.api_client import ApiClient as AsyncApiClient
 from TO_BE_REPLACED.extensions.api_client import SyncApiClient
 from TO_BE_REPLACED.extensions.api_client_factory import set_additional_api_client_headers
@@ -14,6 +15,7 @@ from TO_BE_REPLACED.extensions.tcp_keep_alive_connector import (
 )
 import pytest
 import pytest_asyncio
+from unittest import mock
 
 
 @pytest.fixture
@@ -323,4 +325,25 @@ class TestAsyncApiClientFactory:
             True
             == api_instance.api_client.rest_client.rest_object.pool_manager.connector_owner
         )
+
+class TestApiClientFileTokenConfiguration:
+    def test_api_client_with_config(self):
+        with mock.patch("builtins.open", mock.mock_open(read_data="sample_token")):
+            
+            file_token_loader = FileTokenConfigurationLoader(access_token_location="test_file")
+            config = file_token_loader.load_config()
+            assert "sample_token" == config["access_token"]
+
+    def test_api_with_no_path(self):
+        config_loader = FileTokenConfigurationLoader(access_token_location="")
+        config = config_loader.load_config()
+        assert config["access_token"] is None
     
+    def test_api_with_incorrect_path(self):
+        with mock.patch("builtins.open", mock.mock_open(read_data="sample_token")) as mocked_open:
+            mocked_open.side_effect = FileNotFoundError
+            with pytest.raises(FileNotFoundError):
+                file_token_loader = FileTokenConfigurationLoader(access_token_location="invalid_path")
+                config = file_token_loader.load_config()
+                print(config) # Forces error to be raised
+            
