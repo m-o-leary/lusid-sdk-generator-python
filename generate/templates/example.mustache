@@ -47,9 +47,9 @@ from {{packageName}} import (
         {{paramName}} = {{{example}}} # {{{dataType}}} | {{{description}}}{{^required}} (optional){{/required}}{{#defaultValue}} (default to {{{.}}}){{/defaultValue}}{{/isModel}}{{#isModel}}
         # Objects can be created either via the class constructor, or using the 'from_dict' or 'from_json' methods
         # Change the lines below to switch approach
-        # {{paramName}} = {{{dataType}}}()
         # {{paramName}} = {{{dataType}}}.from_json("")
-        {{paramName}} = {{{dataType}}}.from_dict({{{example}}}) # {{{dataType}}} | {{{description}}}{{^required}} (optional){{/required}}{{#defaultValue}} (default to {{{.}}}){{/defaultValue}}{{/isModel}}
+        # {{paramName}} = {{{dataType}}}.from_dict({})
+        {{paramName}} = {{{dataType}}}(){{/isModel}}
         {{/allParams}}
 
         try:
